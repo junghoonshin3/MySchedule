@@ -6,7 +6,7 @@ import java.time.LocalDate
 
 @Dao
 interface ScheduleDao {
-    @Query("SELECT * from schedules where regDt =:regDt")
+    @Query("SELECT * from schedules where regDt =:regDt and isComplete = 0")
     fun getAllSchedules(regDt: LocalDate): List<ScheduleEntity>
 
     @Query("SELECT * from schedules where id =:id")
@@ -16,6 +16,9 @@ interface ScheduleDao {
     fun insertSchedule(schedule: ScheduleEntity): Long
 
     @Query("DELETE FROM schedules WHERE id = :id")
-    fun deleteSchedule(id: Long)
+    fun deleteSchedule(id: Long): Int
+
+    @Update
+    fun updateSchedule(schedule: ScheduleEntity): Int
 
 }

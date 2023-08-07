@@ -1,13 +1,22 @@
 package kr.sjh.myschedule.ui.screen.detail
 
 import android.util.Log
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
@@ -31,8 +40,6 @@ fun ScheduleDetailScreen(
 
     val scrollState = rememberScrollState()
 
-    val schedule by viewModel.schedule.collectAsState()
-
     val (title, setTitle) = viewModel.title.collectAsMutableState()
 
     val (memo, setMemo) = viewModel.memo.collectAsMutableState()
@@ -41,15 +48,26 @@ fun ScheduleDetailScreen(
 
     val (alarmTime, setAlarmTime) = viewModel.alarmTime.collectAsMutableState()
 
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(start = 10.dp, end = 10.dp, top = 30.dp)
             .verticalScroll(scrollState)
+            .imePadding()
     ) {
 
+        BackHandler {
+            onBackClick()
+        }
+
         Text(text = "제목", fontSize = TextUnit(20f, TextUnitType.Sp))
+
+        val focusRequester = remember { FocusRequester() }
+        val focusManager = LocalFocusManager.current
+
+        LaunchedEffect(Unit) {
+            focusRequester.requestFocus()
+        }
 
         Spacer(modifier = Modifier.padding(2.dp))
 
@@ -59,7 +77,13 @@ fun ScheduleDetailScreen(
                 setTitle(it)
             },
             label = { Text(text = "Title") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focusRequester),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+            )
         )
 
         Spacer(modifier = Modifier.padding(5.dp))
@@ -76,7 +100,9 @@ fun ScheduleDetailScreen(
             onValueChange = {
                 setMemo(it)
             },
-            label = { Text(text = "memo") }
+            label = { Text(text = "memo") },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
         )
 
         Spacer(modifier = Modifier.padding(5.dp))
@@ -105,6 +131,7 @@ fun ScheduleDetailScreen(
             Button(
                 onClick = {
                     viewModel.onSave()
+                    onBackClick()
                 },
                 modifier = Modifier
                     .fillMaxWidth()

@@ -37,6 +37,8 @@ class ScheduleDetailViewModel @Inject constructor(
 
     var alarmTime = MutableStateFlow(LocalDateTime.now())
 
+    var isComplete = MutableStateFlow(false)
+
     init {
         userId?.let { uId ->
             if (uId != ADD_PAGE) {
@@ -44,10 +46,12 @@ class ScheduleDetailViewModel @Inject constructor(
                     repository.getSchedule(uId).collectLatest { schdule ->
                         Log.i("sjh", "userId ok >>>>>>>>>>>>>>>>> $schdule")
                         schdule.let {
+                            uId
                             title.value = it.title
                             memo.value = it.memo
                             isAlarm.value = it.isAlarm
                             alarmTime.value = it.alarmTime
+                            isComplete.value = it.isComplete
                         }
                     }
                 }
@@ -59,13 +63,17 @@ class ScheduleDetailViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             repository.insertSchedule(
                 ScheduleEntity(
+                    userId ?: ADD_PAGE,
                     title.value,
                     memo.value,
                     LocalDate.now(),
                     alarmTime.value,
-                    isAlarm.value
+                    isAlarm.value,
+                    isComplete.value
                 )
-            )
+            ).collectLatest {
+
+            }
         }
     }
 

@@ -7,7 +7,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.*
 import androidx.compose.material.SnackbarDefaults.backgroundColor
 import androidx.compose.material.icons.Icons
@@ -30,11 +29,11 @@ import kr.sjh.myschedule.ui.theme.TextColor
 fun ScheduleList(
     list: List<ScheduleEntity> = listOf(),
     onScheduleClick: (Long) -> Unit,
-    onDeleteSwipe: (ScheduleEntity) -> Unit
+    onDeleteSwipe: (ScheduleEntity) -> Unit,
+    onCompleteSwipe: (ScheduleEntity) -> Unit
 ) {
-    val lazyListState = rememberLazyListState()
     LazyColumn(
-        state = lazyListState, modifier = Modifier
+        modifier = Modifier
             .padding(10.dp)
             .fillMaxSize()
             .background(Color.Transparent)
@@ -42,8 +41,9 @@ fun ScheduleList(
         items(list, key = {
             it.id
         }) {
+
             ScheduleItem(
-                it, onScheduleClick, onDeleteSwipe
+                it, onScheduleClick, onDeleteSwipe, onCompleteSwipe
             )
         }
     }
@@ -54,7 +54,8 @@ fun ScheduleList(
 fun ScheduleItem(
     schedule: ScheduleEntity,
     onScheduleClick: (Long) -> Unit,
-    onDeleteSwipe: (ScheduleEntity) -> Unit
+    onDeleteSwipe: (ScheduleEntity) -> Unit,
+    onCompleteSwipe: (ScheduleEntity) -> Unit
 ) {
 
     val dismissState = rememberDismissState(
@@ -64,7 +65,9 @@ fun ScheduleItem(
                     false
                 }
                 DismissValue.DismissedToEnd -> { // -> 방향 스와이프 (완료)
-                    onDeleteSwipe(schedule)
+                    onCompleteSwipe(schedule.apply {
+                        isComplete = true
+                    })
                     true
                 }
                 DismissValue.DismissedToStart -> { // <- 방향 스와이프 (삭제)
@@ -139,14 +142,12 @@ fun ScheduleItem(
                         color = TextColor,
                         modifier = Modifier.padding(5.dp)
                     )
-
                     Text(
                         text = schedule.memo,
                         fontSize = 15.sp,
                         color = MemoColor,
                         modifier = Modifier.padding(5.dp)
                     )
-
                 }
             }
         }

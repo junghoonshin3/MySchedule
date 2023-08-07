@@ -23,7 +23,9 @@ data class ScheduleEntity(
     @ColumnInfo(name = "alarmTime")
     var alarmTime: LocalDateTime,
     @ColumnInfo(name = "isAlarm")
-    var isAlarm: Boolean = false
+    var isAlarm: Boolean = false,
+    @ColumnInfo(name = "isComplete")
+    var isComplete: Boolean = false
 
 ) : Parcelable {
     constructor(
@@ -31,6 +33,7 @@ data class ScheduleEntity(
         memo: String,
         regDt: LocalDate,
         alarmTime: LocalDateTime,
-        isAlarm: Boolean
-    ) : this(0, title, memo, regDt, alarmTime, isAlarm)
+        isAlarm: Boolean,
+        isComplete: Boolean
+    ) : this(0, title, memo, regDt, alarmTime, isAlarm, isComplete)
 }

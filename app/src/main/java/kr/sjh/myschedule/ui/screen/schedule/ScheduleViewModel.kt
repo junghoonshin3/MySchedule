@@ -1,6 +1,5 @@
 package kr.sjh.myschedule.ui.screen.schedule
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -41,25 +40,43 @@ class ScheduleViewModel @Inject constructor(private val repository: ScheduleRepo
 
     fun deleteSchedule(schedule: ScheduleEntity) {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.deleteSchedule(schedule.id)
-            val new = _scheduleList.value.toMutableList()
-            Log.i("sjh", "new 1 >>> :${new.size}")
-            new.remove(schedule)
-            Log.i("sjh", "new 2 >>> :${new.size}")
-            _scheduleList.value = new
+            repository.deleteSchedule(schedule.id).collectLatest {
+                val new = _scheduleList.value.toMutableList()
+                new.remove(schedule)
+                _scheduleList.value = new
+            }
         }
     }
 
     fun insertSchedule(schedule: ScheduleEntity) {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.insertSchedule(schedule = schedule)
+            repository.insertSchedule(schedule = schedule).collectLatest {
+
+            }
         }
     }
 
     fun getSchedule(schedule: ScheduleEntity) {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.insertSchedule(schedule = schedule)
+            repository.insertSchedule(schedule = schedule).collectLatest {
+
+            }
         }
+    }
+
+    fun updateSchedule(schedule: ScheduleEntity) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.updateSchedule(schedule).collectLatest {
+                val new = _scheduleList.value.toMutableList()
+                new.remove(schedule)
+                _scheduleList.value = new
+            }
+
+        }
+    }
+
+    fun isFabShow(isShow: Boolean) {
+        isFabShow.value = isShow
     }
 
 }

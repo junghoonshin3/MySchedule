@@ -2,6 +2,7 @@ package kr.sjh.myschedule
 
 import android.os.Bundle
 import android.util.Log
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
@@ -38,7 +39,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MyScheduleTheme {
-                // A surface container using the 'background' color from the theme
                 ScheduleApp()
             }
         }
@@ -49,8 +49,11 @@ class MainActivity : ComponentActivity() {
 fun ScheduleApp(
     scheduleViewModel: ScheduleViewModel = hiltViewModel()
 ) {
+
     val navController = rememberNavController()
+
     var isFabShow = scheduleViewModel.isFabShow.collectAsState()
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         floatingActionButton = {
@@ -59,6 +62,7 @@ fun ScheduleApp(
                     backgroundColor = Color(0xffECE6F0),
                     onClick = {
                         navController.navigate(Screen.Detail.createRoute(ADD_PAGE))
+                        scheduleViewModel.isFabShow(false)
                     }) {
                     Icon(imageVector = Icons.Rounded.Edit, contentDescription = "write")
                 }
@@ -82,6 +86,7 @@ fun ScheduleNavHost(
         composable(Screen.Schedule.route) {
             ScheduleScreen(viewModel = scheduleViewModel, onScheduleClick = {
                 navController.navigate(Screen.Detail.createRoute(it))
+                scheduleViewModel.isFabShow(false)
             }, onDateClick = {
                 scheduleViewModel.getAllSchedules(it)
             })
@@ -93,6 +98,7 @@ fun ScheduleNavHost(
         })) {
             ScheduleDetailScreen(onBackClick = {
                 navController.navigateUp()
+                scheduleViewModel.isFabShow(true)
             })
         }
     }
