@@ -11,14 +11,26 @@ import java.time.LocalDateTime
 @Entity(tableName = "schedules")
 @Parcelize
 data class ScheduleEntity(
-    @PrimaryKey(autoGenerate = false)
+    @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "id")
-    var id: Int,
+    var id: Long,
     @ColumnInfo(name = "title")
     var title: String,
     @ColumnInfo(name = "memo")
     var memo: String,
     @ColumnInfo(name = "regDt")
-    var regDt: LocalDate
+    var regDt: LocalDate,
+    @ColumnInfo(name = "alarmTime")
+    var alarmTime: LocalDateTime,
+    @ColumnInfo(name = "isAlarm")
+    var isAlarm: Boolean = false
 
-) : Parcelable
+) : Parcelable {
+    constructor(
+        title: String,
+        memo: String,
+        regDt: LocalDate,
+        alarmTime: LocalDateTime,
+        isAlarm: Boolean
+    ) : this(0, title, memo, regDt, alarmTime, isAlarm)
+}

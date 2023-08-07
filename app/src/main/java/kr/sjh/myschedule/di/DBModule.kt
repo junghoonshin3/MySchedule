@@ -9,7 +9,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kr.sjh.myschedule.data.local.MyScheduleDatabase
 import kr.sjh.myschedule.data.local.dao.ScheduleDao
-import kr.sjh.myschedule.data.local.dao.ScheduleDetailDao
 import javax.inject.Singleton
 
 @Module
@@ -30,11 +29,5 @@ object DBModule {
     @Provides
     fun provideScheduleDao(db: MyScheduleDatabase): ScheduleDao {
         return db.scheduleDao()
-    }
-
-    @Singleton
-    @Provides
-    fun provideScheduleDetailDao(db: MyScheduleDatabase): ScheduleDetailDao {
-        return db.scheduleDetailDao()
     }
 }

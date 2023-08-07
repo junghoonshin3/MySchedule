@@ -1,8 +1,10 @@
 package kr.sjh.myschedule
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
@@ -10,6 +12,7 @@ import androidx.compose.material.Scaffold
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
@@ -25,6 +28,9 @@ import kr.sjh.myschedule.ui.screen.detail.ScheduleDetailScreen
 import kr.sjh.myschedule.ui.screen.schedule.ScheduleScreen
 import kr.sjh.myschedule.ui.screen.schedule.ScheduleViewModel
 import kr.sjh.myschedule.ui.theme.MyScheduleTheme
+import kr.sjh.myschedule.ui.theme.Screen
+import kr.sjh.myschedule.utill.Common
+import kr.sjh.myschedule.utill.Common.ADD_PAGE
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -33,27 +39,37 @@ class MainActivity : ComponentActivity() {
         setContent {
             MyScheduleTheme {
                 // A surface container using the 'background' color from the theme
-                Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    floatingActionButton = {
-                        FloatingActionButton(
-                            backgroundColor = Color(0xffECE6F0),
-                            onClick = { /*TODO*/ }) {
-                            Icon(imageVector = Icons.Rounded.Edit, contentDescription = "write")
-                        }
-                    }
-                ) {
-                    ScheduleApp()
-                }
+                ScheduleApp()
             }
         }
     }
 }
 
 @Composable
-fun ScheduleApp(scheduleViewModel: ScheduleViewModel = hiltViewModel()) {
+fun ScheduleApp(
+    scheduleViewModel: ScheduleViewModel = hiltViewModel()
+) {
     val navController = rememberNavController()
-    ScheduleNavHost(navController = navController, scheduleViewModel = scheduleViewModel)
+    var isFabShow = scheduleViewModel.isFabShow.collectAsState()
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        floatingActionButton = {
+            AnimatedVisibility(visible = isFabShow.value) {
+                FloatingActionButton(
+                    backgroundColor = Color(0xffECE6F0),
+                    onClick = {
+                        navController.navigate(Screen.Detail.createRoute(ADD_PAGE))
+                    }) {
+                    Icon(imageVector = Icons.Rounded.Edit, contentDescription = "write")
+                }
+            }
+        }
+    ) {
+        ScheduleNavHost(
+            navController = navController,
+            scheduleViewModel = scheduleViewModel
+        )
+    }
 }
 
 @Composable
@@ -62,13 +78,18 @@ fun ScheduleNavHost(
     scheduleViewModel: ScheduleViewModel = hiltViewModel()
 ) {
     NavHost(navController = navController, startDestination = "schedule") {
-        composable("schedule") {
+
+        composable(Screen.Schedule.route) {
             ScheduleScreen(viewModel = scheduleViewModel, onScheduleClick = {
-                navController.navigate("scheduleDetail/$it")
+                navController.navigate(Screen.Detail.createRoute(it))
+            }, onDateClick = {
+                scheduleViewModel.getAllSchedules(it)
             })
         }
-        composable("scheduleDetail/{userId}", arguments = listOf(navArgument("userId") {
-            type = NavType.IntType
+
+        composable(Screen.Detail.route, arguments = listOf(navArgument("userId") {
+            type = NavType.LongType
+            defaultValue = ADD_PAGE
         })) {
             ScheduleDetailScreen(onBackClick = {
                 navController.navigateUp()

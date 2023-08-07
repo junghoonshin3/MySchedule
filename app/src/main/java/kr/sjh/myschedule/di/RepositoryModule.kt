@@ -4,9 +4,8 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import kr.sjh.myschedule.data.repository.ScheduleRepository
 import kr.sjh.myschedule.data.local.dao.ScheduleDao
-import kr.sjh.myschedule.data.local.dao.ScheduleDetailDao
+import kr.sjh.myschedule.data.repository.ScheduleRepository
 import javax.inject.Singleton
 
 @Module
@@ -16,12 +15,10 @@ object RepositoryModule {
     @Singleton
     @Provides
     fun provideScheduleRepository(
-        schedule: ScheduleDao,
-        schduleDetail: ScheduleDetailDao
-
+        schedule: ScheduleDao
     ): ScheduleRepository {
         return ScheduleRepository(
-            schedule, schduleDetail
+            schedule
         )
     }
 

@@ -8,3 +8,7 @@ val Purple700 = Color(0xFF3700B3)
 val Teal200 = Color(0xFF03DAC5)
 val TextColor = Color(0xff1D1B20)
 val MemoColor = Color(0xff49454F)
+
+//custeom toggle
+val DarkGray = Color(0XFF79747E)
+val LightGray = Color(0XFFE6E0E9)
