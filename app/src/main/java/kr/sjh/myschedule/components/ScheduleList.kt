@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kr.sjh.myschedule.data.local.entity.ScheduleEntity
@@ -59,8 +60,8 @@ fun ScheduleItem(
 ) {
 
     val dismissState = rememberDismissState(
-        confirmStateChange = { dissMissValue ->
-            when (dissMissValue) {
+        confirmStateChange = { disMissValue ->
+            when (disMissValue) {
                 DismissValue.Default -> { // dismissThresholds 만족 안한 상태
                     false
                 }
@@ -79,7 +80,7 @@ fun ScheduleItem(
 
 
     SwipeToDismiss(state = dismissState,
-        dismissThresholds = { FractionalThreshold(0.25f) },
+        dismissThresholds = { FractionalThreshold(0.5f) },
         background = {
             val direction = dismissState.dismissDirection ?: return@SwipeToDismiss
             val color by animateColorAsState(
@@ -146,7 +147,9 @@ fun ScheduleItem(
                         text = schedule.memo,
                         fontSize = 15.sp,
                         color = MemoColor,
-                        modifier = Modifier.padding(5.dp)
+                        modifier = Modifier.padding(5.dp),
+                        maxLines = 5,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }

@@ -1,6 +1,8 @@
 package kr.sjh.myschedule.ui.screen.detail
 
 import android.util.Log
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -29,7 +31,7 @@ class ScheduleDetailViewModel @Inject constructor(
     private val _schedule = MutableStateFlow<ScheduleEntity?>(null)
     val schedule: StateFlow<ScheduleEntity?> = _schedule
 
-    var title = MutableStateFlow("")
+    var title = MutableStateFlow(TextFieldValue(text = "", selection = TextRange("".length)))
 
     var memo = MutableStateFlow("")
 
@@ -47,7 +49,10 @@ class ScheduleDetailViewModel @Inject constructor(
                         Log.i("sjh", "userId ok >>>>>>>>>>>>>>>>> $schdule")
                         schdule.let {
                             uId
-                            title.value = it.title
+                            title.value = TextFieldValue(
+                                text = it.title,
+                                selection = TextRange(it.title.length)
+                            )
                             memo.value = it.memo
                             isAlarm.value = it.isAlarm
                             alarmTime.value = it.alarmTime
@@ -64,7 +69,7 @@ class ScheduleDetailViewModel @Inject constructor(
             repository.insertSchedule(
                 ScheduleEntity(
                     userId ?: ADD_PAGE,
-                    title.value,
+                    title.value.text,
                     memo.value,
                     LocalDate.now(),
                     alarmTime.value,
@@ -72,7 +77,7 @@ class ScheduleDetailViewModel @Inject constructor(
                     isComplete.value
                 )
             ).collectLatest {
-
+                Log.i("sjh","save id : $it")
             }
         }
     }

@@ -95,5 +95,7 @@ dependencies {
     //WheelPickerCompose
     implementation 'com.github.commandiron:WheelPickerCompose:1.1.11'
 
+    //Accompanist permissions library
+    implementation 'com.google.accompanist:accompanist-permissions:0.23.1'
 
 }
