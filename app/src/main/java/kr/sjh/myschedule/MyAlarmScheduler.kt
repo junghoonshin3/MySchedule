@@ -4,6 +4,8 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.util.Log
+import kr.sjh.myschedule.data.local.entity.ScheduleEntity
 import java.time.ZoneId
 
 class MyAlarmScheduler(private val context: Context) : AlarmScheduler {
@@ -12,8 +14,8 @@ class MyAlarmScheduler(private val context: Context) : AlarmScheduler {
 
     override fun schedule(item: AlarmItem) {
         val intent = Intent(context, AlarmReceiver::class.java).apply {
-            putExtra("EXTRA_MESSAGE", item.message)
-
+            putExtra("TITLE", item.title)
+            putExtra("CONTENT", item.content)
         }
 
         alarmManager.setExactAndAllowWhileIdle(
@@ -21,7 +23,7 @@ class MyAlarmScheduler(private val context: Context) : AlarmScheduler {
             item.time.atZone(ZoneId.systemDefault()).toEpochSecond() * 1000,
             PendingIntent.getBroadcast(
                 context,
-                item.hashCode(),
+                item.id,
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
@@ -29,10 +31,11 @@ class MyAlarmScheduler(private val context: Context) : AlarmScheduler {
     }
 
     override fun cancel(item: AlarmItem) {
+        Log.i("MyAlarmScheduler", "${item.id}")
         alarmManager.cancel(
             PendingIntent.getBroadcast(
                 context,
-                item.hashCode(),
+                item.id,
                 Intent(context, AlarmReceiver::class.java),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )

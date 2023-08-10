@@ -1,5 +1,7 @@
 package kr.sjh.myschedule.ui.screen.detail
 
+import android.util.Log
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
@@ -8,15 +10,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.TextUnit
@@ -26,18 +25,16 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.commandiron.wheel_picker_compose.WheelTimePicker
 import com.commandiron.wheel_picker_compose.core.TimeFormat
 import kr.sjh.myschedule.AlarmItem
-import kr.sjh.myschedule.MyAlarmScheduler
 import kr.sjh.myschedule.components.BackPressHandler
 import kr.sjh.myschedule.components.CustomToggleButton
 import kr.sjh.myschedule.utill.clickableWithoutRipple
 import kr.sjh.myschedule.utill.collectAsMutableState
-import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.temporal.ChronoUnit
 
 @Composable
 fun ScheduleDetailScreen(
     onBackClick: () -> Unit,
+    onSaveSchedule: (AlarmItem, Boolean) -> Unit,
     viewModel: ScheduleDetailViewModel = hiltViewModel()
 ) {
 
@@ -51,13 +48,10 @@ fun ScheduleDetailScreen(
 
     val (alarmTime, setAlarmTime) = viewModel.alarmTime.collectAsMutableState()
 
-    val context = LocalContext.current
-
-    val alarmScheduler = MyAlarmScheduler(context)
-
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color(0xffF7F2FA))
             .padding(start = 10.dp, end = 10.dp, bottom = 20.dp)
             .verticalScroll(scrollState)
             .imePadding()
@@ -70,11 +64,14 @@ fun ScheduleDetailScreen(
         Text(text = "제목", fontSize = TextUnit(20f, TextUnitType.Sp))
 
         val focusRequester = remember { FocusRequester() }
+
         val focusManager = LocalFocusManager.current
+
 
         LaunchedEffect(Unit) {
             focusRequester.requestFocus()
         }
+
         Spacer(modifier = Modifier.padding(2.dp))
 
         OutlinedTextField(
@@ -127,9 +124,10 @@ fun ScheduleDetailScreen(
                 startTime = alarmTime.toLocalTime(),
                 timeFormat = TimeFormat.AM_PM
             ) { snappedTime ->
-                setAlarmTime(LocalDateTime.of(LocalDate.now(), snappedTime).apply {
-                    truncatedTo(ChronoUnit.SECONDS)
-                })
+                Log.i("sjh", "${viewModel.selectedDate}")
+                val selectedAlarmTime =
+                    LocalDateTime.of(viewModel.selectedDate, snappedTime)
+                setAlarmTime(selectedAlarmTime)
             }
         }
         Box(
@@ -139,15 +137,15 @@ fun ScheduleDetailScreen(
         ) {
             Button(
                 onClick = {
-                    val alarmItem = AlarmItem(message = title.text, time = alarmTime)
-
-                    if (isAlarm) {
-                        alarmScheduler.schedule(alarmItem)
-                    } else {
-                        alarmScheduler.cancel(alarmItem)
+                    viewModel.onSaveSchedule {
+                        val item = AlarmItem(
+                            id = it.toInt(),
+                            time = alarmTime,
+                            title = title.text,
+                            content = memo
+                        )
+                        onSaveSchedule(item, isAlarm)
                     }
-
-                    viewModel.onSave()
                     onBackClick()
                 },
                 modifier = Modifier

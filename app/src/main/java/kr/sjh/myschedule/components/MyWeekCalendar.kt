@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -25,23 +26,28 @@ import java.util.*
 
 @Composable
 fun MyWeekCalendar(selectedDay: (LocalDate) -> Unit) {
+
     val currentDate = remember { LocalDate.now() }
+
     val startDate = remember { currentDate.minusDays(500) }
+
     val endDate = remember { currentDate.plusDays(500) }
-    var selection by remember {
+
+    // recomposition시 LocalDate 유지
+    var selection by rememberSaveable {
         mutableStateOf(currentDate)
     }
 
     val state = rememberWeekCalendarState(
         startDate = startDate,
         endDate = endDate,
-        firstVisibleWeekDate = currentDate,
+        firstVisibleWeekDate = selection,
         firstDayOfWeek = DayOfWeek.MONDAY
     )
 
     val visibleWeek = rememberFirstVisibleWeekAfterScroll(
         state,
-        currentDate
+        selection
     ) { currentPosition ->
         selection = currentPosition
         selectedDay(currentPosition)

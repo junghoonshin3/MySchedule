@@ -20,14 +20,8 @@ class ScheduleViewModel @Inject constructor(private val repository: ScheduleRepo
     private val _scheduleList = MutableStateFlow<List<ScheduleEntity>>(emptyList())
     val scheduleList: StateFlow<List<ScheduleEntity>> = _scheduleList
 
-    private val _schedule = MutableStateFlow<ScheduleEntity?>(null)
-    val schedule: StateFlow<ScheduleEntity?> = _schedule
-
-    var isFabShow: MutableStateFlow<Boolean> = MutableStateFlow(true)
-
     init {
         getAllSchedules(LocalDate.now())
-
     }
 
     fun getAllSchedules(localDate: LocalDate) {
@@ -48,21 +42,21 @@ class ScheduleViewModel @Inject constructor(private val repository: ScheduleRepo
         }
     }
 
-    fun insertSchedule(schedule: ScheduleEntity) {
-        viewModelScope.launch(Dispatchers.IO) {
-            repository.insertSchedule(schedule = schedule).collectLatest {
-
-            }
-        }
-    }
-
-    fun getSchedule(schedule: ScheduleEntity) {
-        viewModelScope.launch(Dispatchers.IO) {
-            repository.insertSchedule(schedule = schedule).collectLatest {
-
-            }
-        }
-    }
+//    fun insertSchedule(schedule: ScheduleEntity) {
+//        viewModelScope.launch(Dispatchers.IO) {
+//            repository.insertSchedule(schedule = schedule).collectLatest {
+//
+//            }
+//        }
+//    }
+//
+//    fun getSchedule(schedule: ScheduleEntity) {
+//        viewModelScope.launch(Dispatchers.IO) {
+//            repository.insertSchedule(schedule = schedule).collectLatest {
+//
+//            }
+//        }
+//    }
 
     fun updateSchedule(schedule: ScheduleEntity) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -74,9 +68,4 @@ class ScheduleViewModel @Inject constructor(private val repository: ScheduleRepo
 
         }
     }
-
-    fun isFabShow(isShow: Boolean) {
-        isFabShow.value = isShow
-    }
-
 }

@@ -9,11 +9,14 @@ import kr.sjh.myschedule.utill.Common.CHANNEL_ID
 
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
-        val message = intent?.getStringExtra("EXTRA_MESSAGE") ?: return
+        val title = intent?.getStringExtra("TITLE") ?: return
+        val content = intent.getStringExtra("CONTENT") ?: return
 
-        println("Alarm trigger : $message")
+
+
+        println("Alarm trigger : $title")
         context?.let {
-            showNotification(it, message, message)
+            showNotification(it, title, content)
         }
     }
 

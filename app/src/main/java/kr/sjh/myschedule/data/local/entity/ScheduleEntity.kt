@@ -5,6 +5,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import kotlinx.parcelize.Parcelize
+import kr.sjh.myschedule.AlarmItem
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -25,9 +26,9 @@ data class ScheduleEntity(
     @ColumnInfo(name = "isAlarm")
     var isAlarm: Boolean = false,
     @ColumnInfo(name = "isComplete")
-    var isComplete: Boolean = false
-
+    var isComplete: Boolean = false,
 ) : Parcelable {
+
     constructor(
         title: String,
         memo: String,
@@ -36,4 +37,6 @@ data class ScheduleEntity(
         isAlarm: Boolean,
         isComplete: Boolean
     ) : this(0, title, memo, regDt, alarmTime, isAlarm, isComplete)
+
+//    val alarmItem: AlarmItem? = AlarmItem(alarmTime, title, memo)
 }

@@ -1,5 +1,7 @@
 package kr.sjh.myschedule.ui.theme
 
+import java.time.LocalDate
+
 sealed class Screen(val route: String) {
 
     object Schedule : Screen(
@@ -7,8 +9,9 @@ sealed class Screen(val route: String) {
     )
 
     object Detail : Screen(
-        route = "scheduleDetail/{userId}"
+        route = "scheduleDetail/{userId}/{selectedDate}"
     ) {
-        fun createRoute(userId: Long) = "scheduleDetail/$userId"
+        fun createRoute(userId: Long, selectedDate: LocalDate? = LocalDate.now()) =
+            "scheduleDetail/$userId/$selectedDate"
     }
 }
