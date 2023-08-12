@@ -1,5 +1,6 @@
 package kr.sjh.myschedule.ui.screen.schedule
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -13,12 +14,19 @@ import kr.sjh.myschedule.data.repository.ScheduleRepository
 import java.time.LocalDate
 import javax.inject.Inject
 
+
+data class ScheduleUiState(
+    val scheduleList: List<ScheduleEntity> = emptyList(),
+)
+
 @HiltViewModel
 class ScheduleViewModel @Inject constructor(private val repository: ScheduleRepository) :
     ViewModel() {
 
-    private val _scheduleList = MutableStateFlow<List<ScheduleEntity>>(emptyList())
-    val scheduleList: StateFlow<List<ScheduleEntity>> = _scheduleList
+    private var _uiState = MutableStateFlow(ScheduleUiState())
+    val uiState: StateFlow<ScheduleUiState> = _uiState
+//    private val _scheduleList = MutableStateFlow<List<ScheduleEntity>>(emptyList())
+//    val scheduleList: StateFlow<List<ScheduleEntity>> = _scheduleList
 
     init {
         getAllSchedules(LocalDate.now())
@@ -27,7 +35,7 @@ class ScheduleViewModel @Inject constructor(private val repository: ScheduleRepo
     fun getAllSchedules(localDate: LocalDate) {
         viewModelScope.launch(Dispatchers.IO) {
             repository.getAllSchedules(localDate).collectLatest {
-                _scheduleList.value = it
+                _uiState.value = ScheduleUiState(it)
             }
         }
     }
@@ -35,20 +43,26 @@ class ScheduleViewModel @Inject constructor(private val repository: ScheduleRepo
     fun deleteSchedule(schedule: ScheduleEntity) {
         viewModelScope.launch(Dispatchers.IO) {
             repository.deleteSchedule(schedule.id).collectLatest {
-                val new = _scheduleList.value.toMutableList()
-                new.remove(schedule)
-                _scheduleList.value = new
+                val delete = _uiState.value.scheduleList.toMutableList()
+                delete.remove(schedule)
+                _uiState.value = ScheduleUiState(
+                    delete
+                )
             }
         }
     }
 
-//    fun insertSchedule(schedule: ScheduleEntity) {
-//        viewModelScope.launch(Dispatchers.IO) {
-//            repository.insertSchedule(schedule = schedule).collectLatest {
-//
-//            }
-//        }
-//    }
+    fun insertSchedule(schedule: ScheduleEntity) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.insertSchedule(schedule = schedule).collectLatest {
+                val insert = _uiState.value.scheduleList.toMutableList()
+                insert.add(schedule)
+                _uiState.value = ScheduleUiState(
+                    insert
+                )
+            }
+        }
+    }
 //
 //    fun getSchedule(schedule: ScheduleEntity) {
 //        viewModelScope.launch(Dispatchers.IO) {
@@ -61,9 +75,9 @@ class ScheduleViewModel @Inject constructor(private val repository: ScheduleRepo
     fun updateSchedule(schedule: ScheduleEntity) {
         viewModelScope.launch(Dispatchers.IO) {
             repository.updateSchedule(schedule).collectLatest {
-                val new = _scheduleList.value.toMutableList()
+                val new = _uiState.value.scheduleList.toMutableList()
                 new.remove(schedule)
-                _scheduleList.value = new
+                _uiState.value = ScheduleUiState(new)
             }
 
         }

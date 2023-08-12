@@ -1,20 +1,17 @@
-package kr.sjh.myschedule
+package kr.sjh.myschedule.receiver
 
 import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
+import kr.sjh.myschedule.R
 import kr.sjh.myschedule.utill.Common.CHANNEL_ID
 
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         val title = intent?.getStringExtra("TITLE") ?: return
         val content = intent.getStringExtra("CONTENT") ?: return
-
-
-
-        println("Alarm trigger : $title")
         context?.let {
             showNotification(it, title, content)
         }

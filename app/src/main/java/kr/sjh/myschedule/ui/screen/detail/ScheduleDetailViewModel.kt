@@ -1,9 +1,6 @@
 package kr.sjh.myschedule.ui.screen.detail
 
 import android.util.Log
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.SavedStateHandle
@@ -13,7 +10,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kr.sjh.myschedule.AlarmItem
 import kr.sjh.myschedule.data.local.entity.ScheduleEntity
 import kr.sjh.myschedule.data.repository.ScheduleRepository
 import kr.sjh.myschedule.utill.Common.ADD_PAGE
@@ -22,6 +18,10 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import javax.inject.Inject
 
+data class DetailUiState(
+    val schedule: ScheduleEntity = ScheduleEntity()
+)
+
 @HiltViewModel
 class ScheduleDetailViewModel @Inject constructor(
     private val repository: ScheduleRepository,
@@ -29,62 +29,56 @@ class ScheduleDetailViewModel @Inject constructor(
 ) :
     ViewModel() {
 
-    private val userId = savedStateHandle.get<Long>("userId")
+    private var schedule = savedStateHandle.get<ScheduleEntity>("schedule") ?: ScheduleEntity()
 
-    val selectedDate: LocalDate = savedStateHandle.get<String>("selectedDate")?.let {
-        LocalDate.parse(it)
-    } ?: let {
-        LocalDate.now()
-    }
+//    private var _selectedDate = savedStateHandle.get<LocalDate>("selectedDate") ?: LocalDate.now()
 
-    var title = MutableStateFlow(TextFieldValue(text = "", selection = TextRange("".length)))
+    var _title =
+        MutableStateFlow(
+            TextFieldValue(
+                text = schedule.title,
+                selection = TextRange(schedule.title.length)
+            )
+        )
 
-    var memo = MutableStateFlow("")
+    var _memo = MutableStateFlow(schedule.memo)
 
-    var isAlarm = MutableStateFlow(false)
+    var _isAlarm = MutableStateFlow(schedule.isAlarm)
 
-    var alarmTime = MutableStateFlow(LocalDateTime.now())
+    var _alarmTime = MutableStateFlow(schedule.alarmTime)
 
-    var isComplete = MutableStateFlow(false)
+    var _isComplete = MutableStateFlow(schedule.isComplete)
 
-    init {
-        userId?.let { uId ->
-            Log.i("sjh", "userId >>>>>>>>>>>>>>>>>>>>>>>>> ${uId}")
-            if (uId != ADD_PAGE) {
-                viewModelScope.launch(Dispatchers.IO) {
-                    repository.getSchedule(uId).collectLatest { schedule ->
-                        title.value = TextFieldValue(
-                            text = schedule.title,
-                            selection = TextRange(schedule.title.length)
-                        )
-                        memo.value = schedule.memo
-                        isAlarm.value = schedule.isAlarm
-                        alarmTime.value = schedule.alarmTime
-                        isComplete.value = schedule.isComplete
-                    }
+
+    fun onSaveSchedule(onSavedId: (ScheduleEntity) -> Unit) {
+        viewModelScope.launch(Dispatchers.Main) {
+            if (schedule.id == ADD_PAGE) {
+                val newItem = schedule.apply {
+                    title = _title.value.text
+                    memo = _memo.value
+                    isAlarm = _isAlarm.value
+                    regDt = _alarmTime.value.toLocalDate()
+                    alarmTime = _alarmTime.value
+                    isComplete = _isComplete.value
+                }
+                repository.insertSchedule(newItem).map {
+                    newItem.id = it
+                }.flowOn(Dispatchers.IO).collectLatest {
+                    onSavedId(newItem)
+                }
+            } else {
+                val currentItem = schedule.apply {
+                    title = _title.value.text
+                    memo = _memo.value
+                    isAlarm = _isAlarm.value
+                    regDt = _alarmTime.value.toLocalDate()
+                    alarmTime = _alarmTime.value
+                    isComplete = _isComplete.value
+                }
+                repository.updateSchedule(currentItem).flowOn(Dispatchers.IO).collectLatest {
+                    onSavedId(currentItem)
                 }
             }
         }
     }
-
-    fun onSaveSchedule(savedId: (Long) -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            var scheduleEntity = ScheduleEntity(
-                userId ?: ADD_PAGE,
-                title.value.text,
-                memo.value,
-                selectedDate,
-                alarmTime.value,
-                isAlarm.value,
-                isComplete.value
-            )
-            repository.insertSchedule(
-                scheduleEntity
-            ).collectLatest {
-                savedId.invoke(it)
-            }
-        }
-    }
-
-
 }

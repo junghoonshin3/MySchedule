@@ -23,12 +23,6 @@ fun Month.displayText(short: Boolean = true): String {
     return getDisplayName(style, Locale.KOREAN)
 }
 
-fun DayOfWeek.displayText(uppercase: Boolean = false): String {
-    return getDisplayName(TextStyle.SHORT, Locale.ENGLISH).let { value ->
-        if (uppercase) value.uppercase(Locale.ENGLISH) else value
-    }
-}
-
 fun getWeekPageTitle(week: Week): String {
     val firstDate = week.days.first().date
     val lastDate = week.days.last().date

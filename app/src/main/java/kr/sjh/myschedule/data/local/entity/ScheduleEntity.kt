@@ -5,7 +5,6 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import kotlinx.parcelize.Parcelize
-import kr.sjh.myschedule.AlarmItem
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -14,15 +13,15 @@ import java.time.LocalDateTime
 data class ScheduleEntity(
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "id")
-    var id: Long,
+    var id: Long = 0,
     @ColumnInfo(name = "title")
-    var title: String,
+    var title: String = "",
     @ColumnInfo(name = "memo")
-    var memo: String,
+    var memo: String = "",
     @ColumnInfo(name = "regDt")
-    var regDt: LocalDate,
+    var regDt: LocalDate = LocalDate.now(),
     @ColumnInfo(name = "alarmTime")
-    var alarmTime: LocalDateTime,
+    var alarmTime: LocalDateTime = LocalDateTime.now(),
     @ColumnInfo(name = "isAlarm")
     var isAlarm: Boolean = false,
     @ColumnInfo(name = "isComplete")

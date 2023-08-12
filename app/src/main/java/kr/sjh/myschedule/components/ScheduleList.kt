@@ -29,7 +29,7 @@ import kr.sjh.myschedule.ui.theme.TextColor
 @Composable
 fun ScheduleList(
     list: List<ScheduleEntity> = listOf(),
-    onScheduleClick: (Long) -> Unit,
+    onScheduleClick: (ScheduleEntity) -> Unit,
     onDeleteSwipe: (ScheduleEntity) -> Unit,
     onCompleteSwipe: (ScheduleEntity) -> Unit
 ) {
@@ -54,7 +54,7 @@ fun ScheduleList(
 @Composable
 fun ScheduleItem(
     schedule: ScheduleEntity,
-    onScheduleClick: (Long) -> Unit,
+    onScheduleClick: (ScheduleEntity) -> Unit,
     onDeleteSwipe: (ScheduleEntity) -> Unit,
     onCompleteSwipe: (ScheduleEntity) -> Unit
 ) {
@@ -128,7 +128,7 @@ fun ScheduleItem(
                     .background(Color.Transparent)
                     .padding(top = 12.dp, bottom = 12.dp)
                     .clickable {
-                        onScheduleClick(schedule.id)
+                        onScheduleClick(schedule)
                     }
             )
             {
