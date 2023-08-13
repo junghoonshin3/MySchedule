@@ -1,7 +1,6 @@
 package kr.sjh.myschedule.ui
 
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.core.os.bundleOf
@@ -11,7 +10,9 @@ import androidx.navigation.compose.composable
 import kr.sjh.myschedule.ui.screen.detail.ScheduleDetailScreen
 import kr.sjh.myschedule.ui.screen.schedule.ScheduleScreen
 import kr.sjh.myschedule.ui.screen.schedule.ScheduleViewModel
+import kr.sjh.myschedule.utill.MyScheduleAppState
 import kr.sjh.myschedule.utill.navigate
+import kr.sjh.myschedule.utill.rememberMyScheduleAppState
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
@@ -54,7 +55,6 @@ fun MyScheduleApp(
             ScheduleDetailScreen(
                 onBackClick = { appState.navigateBack() },
                 onSave = { schedule ->
-                    Log.d("sjh", "schedule.id >>>>>>>>>>>>>>>>>>>> ${schedule.id}")
                     if (schedule.isAlarm) {
                         appState.alarmScheduler.schedule(schedule)
                     } else {

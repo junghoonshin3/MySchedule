@@ -39,9 +39,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
 
-
         setContent {
-
             MyScheduleTheme {
                 //노티피케이션 퍼미션 요청
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

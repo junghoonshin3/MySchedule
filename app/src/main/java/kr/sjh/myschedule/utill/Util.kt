@@ -1,5 +1,6 @@
 package kr.sjh.myschedule.utill
 
+import android.util.Log
 import androidx.compose.runtime.*
 import com.kizitonwose.calendar.compose.weekcalendar.WeekCalendarState
 import com.kizitonwose.calendar.core.Week
@@ -52,6 +53,10 @@ fun rememberFirstVisibleWeekAfterScroll(
             .collect {
                 visibleWeek.value = state.firstVisibleWeek
                 //현재 날짜가 스크롤한 주에 포함되어있는지
+                Log.d(
+                    "rememberFirstVisibleWeekAfterScroll",
+                    "currentDate >>>>>>>>>>>>>>>> ${currentDate}"
+                )
                 if (!state.firstVisibleWeek.days.contains(
                         WeekDay(currentDate, WeekDayPosition.RangeDate)
                     )
