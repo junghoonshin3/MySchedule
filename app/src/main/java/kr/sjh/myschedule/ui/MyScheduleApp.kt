@@ -31,7 +31,8 @@ fun MyScheduleApp(
                     appState.navController.navigate(
                         Screen.Detail.route,
                         bundleOf(
-                            "schedule" to scheduleEntity
+                            "schedule" to scheduleEntity,
+                            "selectedDate" to appState.selectedDate.value
                         )
                     )
                 },

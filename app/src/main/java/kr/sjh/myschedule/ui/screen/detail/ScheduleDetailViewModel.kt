@@ -31,7 +31,7 @@ class ScheduleDetailViewModel @Inject constructor(
 
     private var schedule = savedStateHandle.get<ScheduleEntity>("schedule") ?: ScheduleEntity()
 
-//    private var _selectedDate = savedStateHandle.get<LocalDate>("selectedDate") ?: LocalDate.now()
+    private var selectedDate = savedStateHandle.get<LocalDate>("selectedDate") ?: LocalDate.now()
 
     var _title =
         MutableStateFlow(

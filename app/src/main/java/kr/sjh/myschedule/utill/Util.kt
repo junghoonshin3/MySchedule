@@ -1,12 +1,11 @@
 package kr.sjh.myschedule.utill
 
 import android.util.Log
+import androidx.compose.foundation.MutatePriority
 import androidx.compose.runtime.*
+import com.kizitonwose.calendar.compose.CalendarState
 import com.kizitonwose.calendar.compose.weekcalendar.WeekCalendarState
-import com.kizitonwose.calendar.core.Week
-import com.kizitonwose.calendar.core.WeekDay
-import com.kizitonwose.calendar.core.WeekDayPosition
-import com.kizitonwose.calendar.core.yearMonth
+import com.kizitonwose.calendar.core.*
 import kotlinx.coroutines.flow.filter
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -43,7 +42,7 @@ fun getWeekPageTitle(week: Week): String {
 @Composable
 fun rememberFirstVisibleWeekAfterScroll(
     state: WeekCalendarState,
-    currentDate: LocalDate,
+    selectedDate: LocalDate,
     scrollListener: (LocalDate) -> Unit
 ): Week {
     val visibleWeek = remember(state) { mutableStateOf(state.firstVisibleWeek) }
@@ -53,12 +52,8 @@ fun rememberFirstVisibleWeekAfterScroll(
             .collect {
                 visibleWeek.value = state.firstVisibleWeek
                 //현재 날짜가 스크롤한 주에 포함되어있는지
-                Log.d(
-                    "rememberFirstVisibleWeekAfterScroll",
-                    "currentDate >>>>>>>>>>>>>>>> ${currentDate}"
-                )
                 if (!state.firstVisibleWeek.days.contains(
-                        WeekDay(currentDate, WeekDayPosition.RangeDate)
+                        WeekDay(selectedDate, WeekDayPosition.RangeDate)
                     )
                 ) {
                     //보여줄 날짜 리스트
@@ -66,10 +61,31 @@ fun rememberFirstVisibleWeekAfterScroll(
                     scrollListener.invoke(visibleWeekList.first().date)
                 } else {
                     //현재 날짜
-                    scrollListener.invoke(currentDate)
+                    scrollListener.invoke(selectedDate)
                 }
             }
     }
     return visibleWeek.value
 }
 
+@Composable
+fun rememberFirstVisibleMonthAfterScroll(
+    state: CalendarState,
+    selectedDate: LocalDate,
+    onMonthlyListener: (LocalDate) -> Unit
+): CalendarMonth {
+    val visibleMonth = remember(state) { mutableStateOf(state.firstVisibleMonth) }
+    LaunchedEffect(state) {
+        snapshotFlow { state.isScrollInProgress }
+            .filter { scrolling -> !scrolling }
+            .collect {
+                if (selectedDate.month != state.firstVisibleMonth.yearMonth.month) {
+                    onMonthlyListener(state.firstVisibleMonth.yearMonth.atStartOfMonth())
+                } else {
+                    onMonthlyListener(selectedDate)
+                }
+                visibleMonth.value = state.firstVisibleMonth
+            }
+    }
+    return visibleMonth.value
+}
