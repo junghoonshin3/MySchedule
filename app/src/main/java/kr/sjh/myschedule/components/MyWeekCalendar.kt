@@ -70,9 +70,21 @@ fun MyWeekCalendar(selectedDate: LocalDate, onSelectedDate: (LocalDate) -> Unit)
         selectedDate.yearMonth,
         modifier = Modifier.fillMaxWidth(),
         goToPrevious = {
-
+            coroutineScope.launch {
+                if (isWeekMode) {
+                    weekState.animateScrollToWeek(selectedDate.minusWeeks(1))
+                } else {
+                    monthState.animateScrollToMonth(selectedDate.yearMonth.minusMonths(1))
+                }
+            }
         }, goToNext = {
-
+            coroutineScope.launch {
+                if (isWeekMode) {
+                    weekState.animateScrollToWeek(selectedDate.plusWeeks(1))
+                } else {
+                    monthState.animateScrollToMonth(selectedDate.yearMonth.plusMonths(1))
+                }
+            }
         },
         onSwitchCalendarType = {
             isWeekMode = !isWeekMode
@@ -158,11 +170,14 @@ fun CalendarContent(
         if (isWeekMode) {
             val date =
                 if (week.days.contains(WeekDay(currentDate, WeekDayPosition.RangeDate))) {
-                    currentDate
+                    if (currentDate < week.days[selectedDate.dayOfWeek.value - 1].date) {
+                        week.days[selectedDate.dayOfWeek.value - 1].date
+                    } else {
+                        currentDate
+                    }
                 } else {
                     week.days[selectedDate.dayOfWeek.value - 1].date
                 }
-            Log.i("sjh", "week date: ${date}")
             onSelectedDate(date)
         }
 
