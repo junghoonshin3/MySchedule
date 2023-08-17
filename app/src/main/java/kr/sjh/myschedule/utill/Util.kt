@@ -41,9 +41,7 @@ fun getWeekPageTitle(week: Week): String {
 
 @Composable
 fun rememberFirstVisibleWeekAfterScroll(
-    state: WeekCalendarState,
-    selectedDate: LocalDate,
-    scrollListener: (LocalDate) -> Unit
+    state: WeekCalendarState
 ): Week {
     val visibleWeek = remember(state) { mutableStateOf(state.firstVisibleWeek) }
     LaunchedEffect(state) {
@@ -51,18 +49,6 @@ fun rememberFirstVisibleWeekAfterScroll(
             .filter { scrolling -> !scrolling }
             .collect {
                 visibleWeek.value = state.firstVisibleWeek
-                //현재 날짜가 스크롤한 주에 포함되어있는지
-                if (!state.firstVisibleWeek.days.contains(
-                        WeekDay(selectedDate, WeekDayPosition.RangeDate)
-                    )
-                ) {
-                    //보여줄 날짜 리스트
-                    val visibleWeekList = state.firstVisibleWeek.days
-                    scrollListener.invoke(visibleWeekList.first().date)
-                } else {
-                    //현재 날짜
-                    scrollListener.invoke(selectedDate)
-                }
             }
     }
     return visibleWeek.value
@@ -70,20 +56,13 @@ fun rememberFirstVisibleWeekAfterScroll(
 
 @Composable
 fun rememberFirstVisibleMonthAfterScroll(
-    state: CalendarState,
-    selectedDate: LocalDate,
-    onMonthlyListener: (LocalDate) -> Unit
+    state: CalendarState
 ): CalendarMonth {
     val visibleMonth = remember(state) { mutableStateOf(state.firstVisibleMonth) }
     LaunchedEffect(state) {
         snapshotFlow { state.isScrollInProgress }
             .filter { scrolling -> !scrolling }
             .collect {
-                if (selectedDate.month != state.firstVisibleMonth.yearMonth.month) {
-                    onMonthlyListener(state.firstVisibleMonth.yearMonth.atStartOfMonth())
-                } else {
-                    onMonthlyListener(selectedDate)
-                }
                 visibleMonth.value = state.firstVisibleMonth
             }
     }

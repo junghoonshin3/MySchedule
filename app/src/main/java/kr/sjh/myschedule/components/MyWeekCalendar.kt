@@ -1,5 +1,6 @@
 package kr.sjh.myschedule.components
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,12 +20,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kizitonwose.calendar.compose.CalendarState
 import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.compose.WeekCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
+import com.kizitonwose.calendar.compose.weekcalendar.WeekCalendarState
 import com.kizitonwose.calendar.compose.weekcalendar.rememberWeekCalendarState
-import com.kizitonwose.calendar.core.daysOfWeek
-import com.kizitonwose.calendar.core.yearMonth
+import com.kizitonwose.calendar.core.*
+import kotlinx.coroutines.launch
 import kr.sjh.myschedule.ui.theme.TextColor
 import kr.sjh.myschedule.utill.displayText
 import kr.sjh.myschedule.utill.rememberFirstVisibleMonthAfterScroll
@@ -37,7 +40,7 @@ import java.time.format.TextStyle
 import java.util.*
 
 @Composable
-fun MyWeekCalendar(selectedDay: (LocalDate) -> Unit) {
+fun MyWeekCalendar(selectedDate: LocalDate, onSelectedDate: (LocalDate) -> Unit) {
 
     val currentDate = remember { LocalDate.now() }
 
@@ -45,53 +48,26 @@ fun MyWeekCalendar(selectedDay: (LocalDate) -> Unit) {
 
     val endDate = remember { currentDate.plusDays(500) }
 
-
-    var isWeekMode by remember { mutableStateOf(true) }
-
-    // recomposition시 LocalDate 유지
-    var selectionWeekAndMonthly by rememberSaveable {
-        mutableStateOf(currentDate)
-    }
+    var isWeekMode by rememberSaveable { mutableStateOf(true) }
 
     val coroutineScope = rememberCoroutineScope()
 
-    val state = rememberWeekCalendarState(
+    val weekState = rememberWeekCalendarState(
         startDate = startDate,
         endDate = endDate,
         firstVisibleWeekDate = currentDate,
         firstDayOfWeek = DayOfWeek.MONDAY
     )
 
-    val monthlyState = rememberCalendarState(
+    val monthState = rememberCalendarState(
         startMonth = startDate.yearMonth,
         endMonth = endDate.yearMonth,
         firstVisibleMonth = currentDate.yearMonth,
         firstDayOfWeek = DayOfWeek.MONDAY,
-
-        )
-
-    rememberFirstVisibleWeekAfterScroll(
-        state,
-        selectionWeekAndMonthly
-    ) { date ->
-        if (isWeekMode) {
-            selectionWeekAndMonthly = date
-            selectedDay(date)
-        }
-    }
-
-    rememberFirstVisibleMonthAfterScroll(monthlyState, selectionWeekAndMonthly) { date ->
-        if (!isWeekMode) {
-            selectionWeekAndMonthly = date
-            selectedDay(date)
-        }
-
-    }
-
-
+    )
 
     CalendarTitle(
-        selectionWeekAndMonthly.yearMonth,
+        selectedDate.yearMonth,
         modifier = Modifier.fillMaxWidth(),
         goToPrevious = {
 
@@ -100,51 +76,25 @@ fun MyWeekCalendar(selectedDay: (LocalDate) -> Unit) {
         },
         onSwitchCalendarType = {
             isWeekMode = !isWeekMode
+            coroutineScope.launch {
+                if (isWeekMode) {
+                    weekState.animateScrollToWeek(selectedDate)
+                } else {
+                    monthState.animateScrollToMonth(selectedDate.yearMonth)
+                }
+            }
         })
 
     CalendarHeader(daysOfWeek(DayOfWeek.MONDAY))
 
-    LaunchedEffect(key1 = isWeekMode) {
-        if (isWeekMode) {
-            state.scrollToWeek(selectionWeekAndMonthly)
-        } else {
-            monthlyState.scrollToMonth(selectionWeekAndMonthly.yearMonth)
-        }
-    }
-
-    //월 달력
-    AnimatedVisibility(visible = !isWeekMode) {
-        HorizontalCalendar(state = monthlyState, dayContent = { day ->
-            Day(
-                day.date,
-                isPastDay = currentDate > day.date, isSelected = selectionWeekAndMonthly == day.date
-            ) { clicked ->
-                if (selectionWeekAndMonthly != clicked) {
-                    selectionWeekAndMonthly = clicked
-                    selectedDay(clicked)
-                }
-
-            }
-        })
-    }
-
-    //주 달력
-    AnimatedVisibility(visible = isWeekMode) {
-
-
-        WeekCalendar(state = state, userScrollEnabled = true, dayContent = { day ->
-            Day(
-                day.date,
-                isPastDay = currentDate > day.date, isSelected = selectionWeekAndMonthly == day.date
-            ) { clicked ->
-                if (selectionWeekAndMonthly != clicked) {
-                    selectionWeekAndMonthly = clicked
-                    selectedDay(clicked)
-                }
-
-            }
-        })
-    }
+    CalendarContent(
+        currentDate = currentDate,
+        selectedDate = selectedDate,
+        weekState = weekState,
+        monthState = monthState,
+        isWeekMode = isWeekMode,
+        onSelectedDate = onSelectedDate
+    )
 
 }
 
@@ -155,6 +105,7 @@ private fun Day(
     day: LocalDate,
     isPastDay: Boolean,
     isSelected: Boolean,
+    inDate: Boolean = true,
     onClick: (LocalDate) -> Unit,
 ) {
     Box(
@@ -162,7 +113,9 @@ private fun Day(
             .fillMaxWidth()
             .wrapContentHeight()
             .background(Color(0xffF7F2FA))
-            .clickable { onClick(day) },
+            .clickable(enabled = inDate) {
+                onClick(day)
+            },
         contentAlignment = Alignment.Center,
     ) {
         Column(
@@ -173,7 +126,7 @@ private fun Day(
             Text(
                 text = dateFormatter.format(day),
                 fontSize = 18.sp,
-                color = if (isSelected) Color.Red else if (isPastDay) Color.LightGray else TextColor,
+                color = if (isSelected) Color.Red else if (isPastDay || !inDate) Color.LightGray else TextColor,
                 fontWeight = FontWeight.Bold,
             )
         }
@@ -187,6 +140,81 @@ private fun Day(
             )
         }
     }
+}
+
+@Composable
+fun CalendarContent(
+    currentDate: LocalDate,
+    selectedDate: LocalDate,
+    weekState: WeekCalendarState,
+    monthState: CalendarState,
+    isWeekMode: Boolean,
+    onSelectedDate: (LocalDate) -> Unit
+) {
+    val week = rememberFirstVisibleWeekAfterScroll(weekState)
+    val month = rememberFirstVisibleMonthAfterScroll(monthState)
+
+    LaunchedEffect(key1 = week) {
+        if (isWeekMode) {
+            val date =
+                if (week.days.contains(WeekDay(currentDate, WeekDayPosition.RangeDate))) {
+                    currentDate
+                } else {
+                    week.days[selectedDate.dayOfWeek.value - 1].date
+                }
+            Log.i("sjh", "week date: ${date}")
+            onSelectedDate(date)
+        }
+
+    }
+
+    LaunchedEffect(key1 = month) {
+        if (!isWeekMode) {
+            val date = if (month.yearMonth.isValidDay(selectedDate.dayOfMonth)) {
+                when {
+                    month.yearMonth.month == currentDate.month && month.yearMonth.atDay(selectedDate.dayOfMonth) <= currentDate ->
+                        currentDate
+                    month.yearMonth.month != selectedDate.month ->
+                        month.yearMonth.atDay(selectedDate.dayOfMonth)
+                    else ->
+                        selectedDate
+                }
+            } else {
+                monthState.firstVisibleMonth.yearMonth.atStartOfMonth()
+            }
+            Log.i("sjh", "month :${date}")
+            onSelectedDate(date)
+        }
+    }
+
+    //주 달력
+    AnimatedVisibility(visible = isWeekMode) {
+        WeekCalendar(state = weekState, userScrollEnabled = true, dayContent = { day ->
+            Day(
+                day.date,
+                isPastDay = currentDate > day.date, isSelected = selectedDate == day.date,
+            ) { clicked ->
+                onSelectedDate(clicked)
+            }
+        })
+    }
+
+    //월 달력
+    AnimatedVisibility(visible = !isWeekMode) {
+        HorizontalCalendar(state = monthState, dayContent = { day ->
+            Day(
+                day.date,
+                isPastDay = currentDate > day.date, isSelected = selectedDate == day.date,
+                inDate = day.position == DayPosition.MonthDate
+            ) { clicked ->
+                if (selectedDate != clicked) {
+                    onSelectedDate(day.date)
+                }
+            }
+        })
+    }
+
+
 }
 
 @Composable

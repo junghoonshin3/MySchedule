@@ -45,7 +45,13 @@ class ScheduleDetailViewModel @Inject constructor(
 
     var _isAlarm = MutableStateFlow(schedule.isAlarm)
 
-    var _alarmTime = MutableStateFlow(schedule.alarmTime)
+    var _alarmTime = MutableStateFlow(
+        if (schedule.id == ADD_PAGE) {
+            LocalDateTime.of(selectedDate, LocalTime.now())
+        } else {
+            schedule.alarmTime
+        }
+    )
 
     var _isComplete = MutableStateFlow(schedule.isComplete)
 
@@ -57,7 +63,7 @@ class ScheduleDetailViewModel @Inject constructor(
                     title = _title.value.text
                     memo = _memo.value
                     isAlarm = _isAlarm.value
-                    regDt = _alarmTime.value.toLocalDate()
+                    regDt = selectedDate
                     alarmTime = _alarmTime.value
                     isComplete = _isComplete.value
                 }

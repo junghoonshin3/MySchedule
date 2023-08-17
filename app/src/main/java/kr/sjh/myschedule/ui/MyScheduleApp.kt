@@ -1,6 +1,7 @@
 package kr.sjh.myschedule.ui
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.core.os.bundleOf
@@ -37,6 +38,7 @@ fun MyScheduleApp(
                     )
                 },
                 onSelectedDate = {
+                    scheduleViewModel.getAllSchedules(it)
                     appState.selectedDate.value = it
                 },
                 onDeleteSwipe = {
