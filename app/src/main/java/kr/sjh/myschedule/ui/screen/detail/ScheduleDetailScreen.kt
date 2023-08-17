@@ -10,7 +10,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -18,8 +20,11 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.commandiron.wheel_picker_compose.WheelDateTimePicker
@@ -39,7 +44,6 @@ fun ScheduleDetailScreen(
 ) {
 
     val scrollState = rememberScrollState()
-
 
     val title by viewModel._title.collectAsState()
 
@@ -69,15 +73,29 @@ fun DetailTopBar(onBackClick: () -> Unit) {
         elevation = 0.dp,
         contentPadding = PaddingValues(0.dp)
     ) {
-        Box(
-            contentAlignment = Alignment.CenterStart,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .fillMaxHeight()
-                .width(50.dp)
-                .clickableWithoutRipple {
-                    onBackClick()
-                }) {
-            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = null)
+                .height(50.dp)
+                .fillMaxWidth()
+        ) {
+            Box(contentAlignment = Alignment.CenterStart) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = null,
+                    modifier = Modifier.clickableWithoutRipple {
+                        onBackClick()
+                    })
+                Text(
+                    textAlign = TextAlign.Center,
+                    text = "스케쥴 등록",
+                    modifier = Modifier.fillMaxWidth(),
+                    fontSize = 20.sp,
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold,
+                    fontStyle = FontStyle.Normal
+                )
+            }
         }
     }
 }
@@ -98,6 +116,15 @@ fun DetailContent(
 
     val focusManager = LocalFocusManager.current
 
+    var isError by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    fun valiDate(text: String) {
+        isError = text.isEmpty()
+
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -111,6 +138,7 @@ fun DetailContent(
                 value = title,
                 maxLines = 2,
                 onValueChange = {
+                    valiDate(it.text)
                     viewModel._title.value = it
                 },
                 label = { Text(text = "Title") },
@@ -119,10 +147,37 @@ fun DetailContent(
                     .focusRequester(focusRequester),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, autoCorrect = false),
                 keyboardActions = KeyboardActions(
-                    onDone = { focusManager.clearFocus() }
-                )
+                    onDone = {
+                        focusManager.clearFocus()
+                    }
+                ),
+                isError = isError,
+                trailingIcon = {
+                    if (isError)
+                        Icon(
+                            imageVector = Icons.Filled.Error,
+                            contentDescription = "제목을 입력해주세요",
+                            tint = MaterialTheme.colors.error
+                        )
+                }
             )
-            Spacer(modifier = Modifier.height(15.dp))
+            if (isError) {
+                Text(
+                    text = "제목을 입력해주세요",
+                    color = MaterialTheme.colors.error,
+                    style = MaterialTheme.typography.caption,
+                    modifier = Modifier
+                        .padding(top = 3.dp)
+                        .height(22.dp),
+                )
+            } else {
+                Spacer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(25.dp)
+                )
+            }
+
             OutlinedTextField(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -169,6 +224,7 @@ fun DetailContent(
             contentAlignment = Alignment.BottomCenter
         ) {
             Button(
+                enabled = !isError && title.text.isNotEmpty(),
                 onClick = {
                     viewModel.onSaveSchedule {
                         onSave(it)

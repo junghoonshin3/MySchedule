@@ -8,10 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,13 +32,9 @@ fun ScheduleScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(key1 = selectedDate) {
-        Log.i("sjh", " selectedDate>>>>>>>>>>>>>>${selectedDate}")
-        viewModel.getAllSchedules(selectedDate)
-    }
-
     ScheduleScreen(
         uiState,
+        selectedDate,
         onScheduleClick,
         onSelectedDate,
         onDeleteSwipe,
@@ -51,6 +45,7 @@ fun ScheduleScreen(
 @Composable
 private fun ScheduleScreen(
     uiState: ScheduleUiState,
+    selectedDate: LocalDate,
     onScheduleClick: (ScheduleEntity?) -> Unit,
     onSelectedDate: (LocalDate) -> Unit,
     onDeleteSwipe: (ScheduleEntity) -> Unit,
@@ -72,7 +67,7 @@ private fun ScheduleScreen(
         }
     ) {
         Column(modifier.background(Color(0xffF7F2FA))) {
-            ScheduleTopBar(onSelectedDate)
+            ScheduleTopBar(selectedDate, onSelectedDate)
             if (uiState.scheduleList.isNotEmpty()) {
                 ScheduleContent(uiState, onScheduleClick, onDeleteSwipe, onCompleteSwipe)
             } else {
@@ -101,10 +96,11 @@ fun ScheduleContent(
 
 @Composable
 fun ScheduleTopBar(
+    selectedDate: LocalDate,
     onSelectedDate: (LocalDate) -> Unit
 ) {
-    MyWeekCalendar { selectedDate ->
-        onSelectedDate(selectedDate)
+    MyWeekCalendar(selectedDate) { date ->
+        onSelectedDate(date)
     }
 }
 
