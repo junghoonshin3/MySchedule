@@ -80,12 +80,6 @@ class MyScheduleAppState(
     var selectedDate: MutableState<LocalDate>,
     val alarmScheduler: MyAlarmScheduler
 ) {
-    fun navigateToDetail(id: Long, selectedDate: LocalDate?, from: NavBackStackEntry) {
-        // In order to discard duplicated navigation events, we check the Lifecycle
-        if (from.lifecycleIsResumed()) {
-            navController.navigate(Screen.Detail.route)
-        }
-    }
 
     fun navigateBack() {
         navController.popBackStack()

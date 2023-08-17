@@ -58,32 +58,24 @@ class ScheduleDetailViewModel @Inject constructor(
 
     fun onSaveSchedule(onSavedId: (ScheduleEntity) -> Unit) {
         viewModelScope.launch(Dispatchers.Main) {
+            val newItem = schedule.copy(
+                title = _title.value.text,
+                memo = _memo.value,
+                isAlarm = _isAlarm.value,
+                regDt = _alarmTime.value.toLocalDate(),
+                alarmTime = _alarmTime.value,
+                isComplete = _isComplete.value
+            )
+
             if (schedule.id == ADD_PAGE) {
-                val newItem = schedule.apply {
-                    title = _title.value.text
-                    memo = _memo.value
-                    isAlarm = _isAlarm.value
-                    regDt = selectedDate
-                    alarmTime = _alarmTime.value
-                    isComplete = _isComplete.value
-                }
-                repository.insertSchedule(newItem).map {
-                    newItem.id = it
-                }.flowOn(Dispatchers.IO).collectLatest {
-                    onSavedId(newItem)
-                }
+                repository.insertSchedule(newItem)
+                    .map { newId -> newItem.copy(id = newId) }
+                    .flowOn(Dispatchers.IO)
+                    .collectLatest { updatedItem -> onSavedId(updatedItem) }
             } else {
-                val currentItem = schedule.apply {
-                    title = _title.value.text
-                    memo = _memo.value
-                    isAlarm = _isAlarm.value
-                    regDt = _alarmTime.value.toLocalDate()
-                    alarmTime = _alarmTime.value
-                    isComplete = _isComplete.value
-                }
-                repository.updateSchedule(currentItem).flowOn(Dispatchers.IO).collectLatest {
-                    onSavedId(currentItem)
-                }
+                repository.updateSchedule(newItem)
+                    .flowOn(Dispatchers.IO)
+                    .collectLatest { onSavedId(newItem) }
             }
         }
     }
