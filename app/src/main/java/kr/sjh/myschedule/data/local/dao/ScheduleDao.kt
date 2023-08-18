@@ -9,6 +9,9 @@ interface ScheduleDao {
     @Query("SELECT * from schedules where regDt =:regDt and isComplete = 0")
     fun getAllSchedules(regDt: LocalDate): List<ScheduleEntity>
 
+    @Query("SELECT regDt,* from schedules where regDt BETWEEN :startDt AND :endDt")
+    fun getAllBetweenSchedulesByGroup(startDt: LocalDate, endDt: LocalDate): List<ScheduleEntity>
+
     @Query("SELECT * from schedules where id =:id")
     fun getSchedule(id: Long): ScheduleEntity
 

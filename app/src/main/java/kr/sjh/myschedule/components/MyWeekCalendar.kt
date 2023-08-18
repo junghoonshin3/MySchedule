@@ -28,6 +28,7 @@ import com.kizitonwose.calendar.compose.weekcalendar.WeekCalendarState
 import com.kizitonwose.calendar.compose.weekcalendar.rememberWeekCalendarState
 import com.kizitonwose.calendar.core.*
 import kotlinx.coroutines.launch
+import kr.sjh.myschedule.data.local.entity.ScheduleEntity
 import kr.sjh.myschedule.ui.theme.TextColor
 import kr.sjh.myschedule.utill.displayText
 import kr.sjh.myschedule.utill.rememberFirstVisibleMonthAfterScroll
@@ -40,7 +41,11 @@ import java.time.format.TextStyle
 import java.util.*
 
 @Composable
-fun MyWeekCalendar(selectedDate: LocalDate, onSelectedDate: (LocalDate) -> Unit) {
+fun MyWeekCalendar(
+    scheduleMap: Map<LocalDate, List<ScheduleEntity>>,
+    selectedDate: LocalDate,
+    onSelectedDate: (LocalDate) -> Unit
+) {
 
     val currentDate = remember { LocalDate.now() }
 
@@ -100,6 +105,7 @@ fun MyWeekCalendar(selectedDate: LocalDate, onSelectedDate: (LocalDate) -> Unit)
     CalendarHeader(daysOfWeek(DayOfWeek.MONDAY))
 
     CalendarContent(
+        scheduleMap = scheduleMap,
         currentDate = currentDate,
         selectedDate = selectedDate,
         weekState = weekState,
@@ -118,20 +124,22 @@ private fun Day(
     isPastDay: Boolean,
     isSelected: Boolean,
     inDate: Boolean = true,
+    isSchedule: Boolean = false,
     onClick: (LocalDate) -> Unit,
 ) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight()
-            .background(Color(0xffF7F2FA))
+            .background(if (isSchedule) Color.Yellow else Color(0xffF7F2FA))
             .clickable(enabled = inDate) {
                 onClick(day)
             },
         contentAlignment = Alignment.Center,
     ) {
         Column(
-            modifier = Modifier.padding(vertical = 20.dp),
+            modifier = Modifier
+                .padding(vertical = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
@@ -156,6 +164,7 @@ private fun Day(
 
 @Composable
 fun CalendarContent(
+    scheduleMap: Map<LocalDate, List<ScheduleEntity>>,
     currentDate: LocalDate,
     selectedDate: LocalDate,
     weekState: WeekCalendarState,
@@ -208,6 +217,7 @@ fun CalendarContent(
             Day(
                 day.date,
                 isPastDay = currentDate > day.date, isSelected = selectedDate == day.date,
+                isSchedule = scheduleMap[day.date]?.isNotEmpty() ?: false
             ) { clicked ->
                 onSelectedDate(clicked)
             }
@@ -220,7 +230,8 @@ fun CalendarContent(
             Day(
                 day.date,
                 isPastDay = currentDate > day.date, isSelected = selectedDate == day.date,
-                inDate = day.position == DayPosition.MonthDate
+                inDate = day.position == DayPosition.MonthDate,
+                isSchedule = scheduleMap[day.date]?.isNotEmpty() ?: false
             ) { clicked ->
                 if (selectedDate != clicked) {
                     onSelectedDate(day.date)

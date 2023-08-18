@@ -61,4 +61,13 @@ class ScheduleRepository constructor(
         }
     }.flowOn(Dispatchers.IO)
 
+    fun getAllBetweenSchedulesByGroup(sDt: LocalDate, eDt: LocalDate) = flow {
+        try {
+            emit(scheduleDao.getAllBetweenSchedulesByGroup(sDt, eDt))
+        } catch (e: Exception) {
+            e.printStackTrace()
+            error(e)
+        }
+    }.flowOn(Dispatchers.IO)
+
 }
