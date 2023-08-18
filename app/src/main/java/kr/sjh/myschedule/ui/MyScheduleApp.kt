@@ -1,12 +1,17 @@
 package kr.sjh.myschedule.ui
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.core.os.bundleOf
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.kizitonwose.calendar.core.atStartOfMonth
+import com.kizitonwose.calendar.core.yearMonth
 import kr.sjh.myschedule.ui.screen.detail.ScheduleDetailScreen
 import kr.sjh.myschedule.ui.screen.schedule.ScheduleScreen
 import kr.sjh.myschedule.ui.screen.schedule.ScheduleViewModel
@@ -22,10 +27,12 @@ fun MyScheduleApp(
 
     val scheduleViewModel = hiltViewModel<ScheduleViewModel>()
 
+    val uiState by scheduleViewModel.uiState.collectAsState()
+
     NavHost(navController = appState.navController, startDestination = Screen.Schedule.route) {
         composable(Screen.Schedule.route) {
             ScheduleScreen(
-                viewModel = scheduleViewModel,
+                uiState.monthSchedule,
                 selectedDate = appState.selectedDate.value,
                 onScheduleClick = { scheduleEntity ->
                     appState.navController.navigate(
@@ -36,9 +43,15 @@ fun MyScheduleApp(
                         )
                     )
                 },
-                onSelectedDate = {
-                    scheduleViewModel.getAllSchedules(it)
-                    appState.selectedDate.value = it
+                onSelectedDate = { date ->
+                    // 선택한 달과 동일한 달이 아니면 데이터를 불러오지않기
+                    if (appState.selectedDate.value.month != date.month) {
+                        scheduleViewModel.getAllBetweenSchedulesByGroup(
+                            date.yearMonth.atStartOfMonth(),
+                            date.yearMonth.atEndOfMonth()
+                        )
+                    }
+                    appState.selectedDate.value = date
                 },
                 onDeleteSwipe = {
                     if (it.isAlarm) {
@@ -52,7 +65,6 @@ fun MyScheduleApp(
                     }
                     it.isComplete = true
                     scheduleViewModel.updateSchedule(it)
-
                 }
             )
         }
@@ -66,6 +78,7 @@ fun MyScheduleApp(
                     } else {
                         appState.alarmScheduler.cancel(schedule)
                     }
+                    scheduleViewModel.updateSchedule(schedule = schedule)
                 },
                 viewModel = hiltViewModel()
             )
