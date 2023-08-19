@@ -1,7 +1,10 @@
 package kr.sjh.myschedule.components
 
 import android.util.Log
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.*
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -211,34 +214,54 @@ fun CalendarContent(
         }
     }
 
-    //주 달력
-    AnimatedVisibility(visible = isWeekMode) {
-        WeekCalendar(state = weekState, userScrollEnabled = true, dayContent = { day ->
-            Day(
-                day.date,
-                isPastDay = currentDate > day.date, isSelected = selectedDate == day.date,
-                isSchedule = scheduleMap[day.date]?.isNotEmpty() ?: false
-            ) { clicked ->
-                onSelectedDate(clicked)
-            }
-        })
+    AnimatedContent(targetState = isWeekMode,
+        transitionSpec = {
+            slideInVertically(
+                initialOffsetY = { fullHeight -> -fullHeight },
+                animationSpec = tween(durationMillis = 150, easing = LinearOutSlowInEasing)
+            ).togetherWith(
+                slideOutVertically(
+                    targetOffsetY = { fullHeight -> -fullHeight },
+                    animationSpec = tween(durationMillis = 250, easing = FastOutLinearInEasing)
+                )
+            )
+        }
+    ) { weekMode ->
+        if (weekMode) {
+            WeekCalendar(state = weekState, userScrollEnabled = true, dayContent = { day ->
+                Day(
+                    day.date,
+                    isPastDay = currentDate > day.date, isSelected = selectedDate == day.date,
+                    isSchedule = scheduleMap[day.date]?.isNotEmpty() ?: false
+                ) { clicked ->
+                    onSelectedDate(clicked)
+                }
+            })
+        } else {
+            HorizontalCalendar(state = monthState, dayContent = { day ->
+                Day(
+                    day.date,
+                    isPastDay = currentDate > day.date, isSelected = selectedDate == day.date,
+                    inDate = day.position == DayPosition.MonthDate,
+                    isSchedule = scheduleMap[day.date]?.isNotEmpty() ?: false
+                ) { clicked ->
+                    if (selectedDate != clicked) {
+                        onSelectedDate(day.date)
+                    }
+                }
+            })
+        }
     }
 
+    //주 달력
+//    AnimatedVisibility(visible = isWeekMode) {
+//
+//    }
+
     //월 달력
-    AnimatedVisibility(visible = !isWeekMode) {
-        HorizontalCalendar(state = monthState, dayContent = { day ->
-            Day(
-                day.date,
-                isPastDay = currentDate > day.date, isSelected = selectedDate == day.date,
-                inDate = day.position == DayPosition.MonthDate,
-                isSchedule = scheduleMap[day.date]?.isNotEmpty() ?: false
-            ) { clicked ->
-                if (selectedDate != clicked) {
-                    onSelectedDate(day.date)
-                }
-            }
-        })
-    }
+//    AnimatedVisibility(visible = !isWeekMode) {
+//
+//    }
 
 
 }
