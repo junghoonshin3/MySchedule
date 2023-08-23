@@ -32,6 +32,7 @@ import com.commandiron.wheel_picker_compose.core.TimeFormat
 import com.commandiron.wheel_picker_compose.core.WheelPickerDefaults
 import kr.sjh.myschedule.components.CustomToggleButton
 import kr.sjh.myschedule.data.local.entity.ScheduleEntity
+import kr.sjh.myschedule.ui.theme.*
 import kr.sjh.myschedule.utill.clickableWithoutRipple
 import java.time.LocalDateTime
 
@@ -128,20 +129,30 @@ fun DetailContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xffF7F2FA))
+            .background(SoftBlue)
             .padding(10.dp)
             .verticalScroll(scrollState)
     ) {
         Column(Modifier.fillMaxHeight()) {
             DetailTopBar(onBackClick)
             OutlinedTextField(
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    textColor = Color(0xff001c2d),
+                    focusedBorderColor = FontColorNomal,
+                    unfocusedBorderColor = FontColorNomal
+                ),
                 value = title,
                 maxLines = 2,
                 onValueChange = {
                     valiDate(it.text)
                     viewModel._title.value = it
                 },
-                label = { Text(text = "Title") },
+                label = {
+                    Text(
+                        text = "제목",
+                        color = if (isError) MaterialTheme.colors.error else FontColorNomal
+                    )
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(focusRequester),
@@ -179,6 +190,11 @@ fun DetailContent(
             }
 
             OutlinedTextField(
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    backgroundColor = DarkGray,
+                    focusedBorderColor = FontColorNomal,
+                    unfocusedBorderColor = FontColorNomal
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp),
@@ -186,7 +202,12 @@ fun DetailContent(
                 onValueChange = {
                     viewModel._memo.value = it
                 },
-                label = { Text(text = "memo") },
+                label = {
+                    Text(
+                        text = "내용",
+                        color = FontColorNomal
+                    )
+                },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done, autoCorrect = false),
                 keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
             )
@@ -228,8 +249,8 @@ fun DetailContent(
                 onClick = {
                     viewModel.onSaveSchedule {
                         onSave(it)
-                        onBackClick()
                     }
+                    onBackClick()
                 },
                 modifier = Modifier
                     .fillMaxWidth()

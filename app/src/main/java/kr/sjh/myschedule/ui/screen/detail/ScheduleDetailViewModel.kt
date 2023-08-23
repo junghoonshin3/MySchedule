@@ -56,27 +56,15 @@ class ScheduleDetailViewModel @Inject constructor(
     var _isComplete = MutableStateFlow(schedule.isComplete)
 
 
-    fun onSaveSchedule(onSavedId: (ScheduleEntity) -> Unit) {
-        viewModelScope.launch(Dispatchers.Main) {
-            val newItem = schedule.copy(
-                title = _title.value.text,
-                memo = _memo.value,
-                isAlarm = _isAlarm.value,
-                regDt = _alarmTime.value.toLocalDate(),
-                alarmTime = _alarmTime.value,
-                isComplete = _isComplete.value
-            )
-
-            if (schedule.id == ADD_PAGE) {
-                repository.insertSchedule(newItem)
-                    .map { newId -> newItem.copy(id = newId) }
-                    .flowOn(Dispatchers.IO)
-                    .collectLatest { updatedItem -> onSavedId(updatedItem) }
-            } else {
-                repository.updateSchedule(newItem)
-                    .flowOn(Dispatchers.IO)
-                    .collectLatest { onSavedId(newItem) }
-            }
-        }
+    fun onSaveSchedule(onSavedItem: (ScheduleEntity) -> Unit) {
+        val newItem = schedule.copy(
+            title = _title.value.text,
+            memo = _memo.value,
+            isAlarm = _isAlarm.value,
+            regDt = _alarmTime.value.toLocalDate(),
+            alarmTime = _alarmTime.value,
+            isComplete = _isComplete.value
+        )
+        onSavedItem(newItem)
     }
 }

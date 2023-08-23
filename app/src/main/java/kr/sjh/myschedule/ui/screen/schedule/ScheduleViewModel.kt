@@ -1,23 +1,24 @@
 package kr.sjh.myschedule.ui.screen.schedule
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kizitonwose.calendar.core.atStartOfMonth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kr.sjh.myschedule.data.local.entity.ScheduleEntity
 import kr.sjh.myschedule.data.repository.ScheduleRepository
 import java.time.LocalDate
-import java.time.YearMonth
 import javax.inject.Inject
 
 
 data class ScheduleUiState(
-    val monthSchedule: Map<LocalDate, List<ScheduleEntity>> = emptyMap(),
+    var allYearSchedules: List<ScheduleEntity> = emptyList(),
 )
 
 @HiltViewModel
@@ -27,75 +28,66 @@ class ScheduleViewModel @Inject constructor(private val repository: ScheduleRepo
     private var _uiState = MutableStateFlow(ScheduleUiState())
     val uiState: StateFlow<ScheduleUiState> = _uiState
 
-    //    private val _scheduleList = MutableStateFlow<List<ScheduleEntity>>(emptyList())
-//    val scheduleList: StateFlow<List<ScheduleEntity>> = _scheduleList
-    val yearMonth = YearMonth.now()
-
     init {
-        getAllBetweenSchedulesByGroup(yearMonth.atStartOfMonth(), yearMonth.atEndOfMonth())
+        getAllYearSchedules(LocalDate.now())
     }
 
-    fun getAllSchedules(localDate: LocalDate) {
-        viewModelScope.launch(Dispatchers.IO) {
-            repository.getAllSchedules(localDate).collectLatest {
-//                _uiState.value = ScheduleUiState(it)
-            }
-        }
-    }
 
     fun deleteSchedule(schedule: ScheduleEntity) {
         viewModelScope.launch(Dispatchers.IO) {
             repository.deleteSchedule(schedule.id).collectLatest {
-//                val delete = _uiState.value.scheduleList.toMutableList()
-//                delete.remove(schedule)
-//                _uiState.value = ScheduleUiState(
-//                    delete
-//                )
+                remove(schedule)
             }
         }
     }
 
-    fun insertSchedule(schedule: ScheduleEntity) {
+    fun insertOrUpdate(schedule: ScheduleEntity) {
+        Log.i("schedule", "id >>>>>>>>>>>>>> ${schedule.id}")
         viewModelScope.launch(Dispatchers.IO) {
-            repository.insertSchedule(schedule = schedule).collectLatest {
-//                val insert = _uiState.value.scheduleList.toMutableList()
-//                insert.add(schedule)
-//                _uiState.value = ScheduleUiState(
-//                    insert
-//                )
+            repository.insertOrUpdate(schedule).collectLatest {
+                schedule.id = it
+                update(schedule)
             }
         }
     }
 
-    fun getAllBetweenSchedulesByGroup(sDt: LocalDate, eDt: LocalDate) {
+    fun completeSchedule(schedule: ScheduleEntity) {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.getAllBetweenSchedulesByGroup(sDt, eDt).collectLatest { schedules ->
-                val groupBySchedule = schedules.groupBy { it.regDt }
-                _uiState.value = ScheduleUiState(groupBySchedule)
-            }
-        }
-    }
-//
-//    fun getSchedule(schedule: ScheduleEntity) {
-//        viewModelScope.launch(Dispatchers.IO) {
-//            repository.insertSchedule(schedule = schedule).collectLatest {
-//
-//            }
-//        }
-//    }
-
-    fun updateSchedule(schedule: ScheduleEntity) {
-        viewModelScope.launch(Dispatchers.IO) {
+            schedule.isComplete = true
             repository.updateSchedule(schedule).collectLatest {
-                val newSchedule =
-                    _uiState.value.monthSchedule[schedule.regDt]?.toMutableList() ?: mutableListOf()
-                newSchedule.add(schedule)
-                _uiState.value = ScheduleUiState(
-                    _uiState.value.copy().monthSchedule.toMutableMap().apply {
-                        set(schedule.regDt, newSchedule)
-                    }
-                )
+                remove(schedule)
             }
         }
     }
+
+    fun getAllYearSchedules(selectedDate: LocalDate) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.getYearSchedules(selectedDate).collectLatest { schedules ->
+                _uiState.value = ScheduleUiState(schedules)
+            }
+        }
+    }
+
+    private fun remove(schedule: ScheduleEntity) {
+        Log.i("sjh", "remove : ${schedule.id}")
+        val removeList = _uiState.value.allYearSchedules.toMutableList()
+        removeList.remove(schedule)
+        _uiState.update {
+            ScheduleUiState(allYearSchedules = removeList)
+        }
+    }
+
+    private fun update(schedule: ScheduleEntity) {
+        val updateList = uiState.value.allYearSchedules.toMutableList()
+        val findSchedule = updateList.find { it.id == schedule.id }
+        if (findSchedule != null) {
+            val index = updateList.indexOf(findSchedule)
+            updateList[index] = schedule
+            Log.i("sjh", "findSchedule >> $index")
+        } else {
+            updateList.add(schedule)
+        }
+        _uiState.value.allYearSchedules = updateList
+    }
+
 }

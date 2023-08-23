@@ -22,6 +22,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kr.sjh.myschedule.data.local.entity.ScheduleEntity
 import kr.sjh.myschedule.ui.theme.MemoColor
 import kr.sjh.myschedule.ui.theme.TextColor
@@ -40,9 +44,8 @@ fun ScheduleList(
             .background(Color.Transparent)
     ) {
         items(list, key = {
-            it.hashCode()
+            it.id
         }) {
-
             ScheduleItem(
                 it, onScheduleClick, onDeleteSwipe, onCompleteSwipe
             )
@@ -63,16 +66,24 @@ fun ScheduleItem(
         confirmStateChange = { disMissValue ->
             when (disMissValue) {
                 DismissValue.Default -> { // dismissThresholds 만족 안한 상태
+                    CoroutineScope(Dispatchers.Default).launch {
+                        delay(200)
+                    }
                     false
                 }
                 DismissValue.DismissedToEnd -> { // -> 방향 스와이프 (완료)
-                    onCompleteSwipe(schedule.apply {
-                        isComplete = true
-                    })
+                    CoroutineScope(Dispatchers.Default).launch {
+                        delay(200)
+                        onCompleteSwipe(schedule)
+                    }
+
                     true
                 }
                 DismissValue.DismissedToStart -> { // <- 방향 스와이프 (삭제)
-                    onDeleteSwipe(schedule)
+                    CoroutineScope(Dispatchers.Default).launch {
+                        delay(200)
+                        onDeleteSwipe(schedule)
+                    }
                     true
                 }
             }
@@ -80,7 +91,7 @@ fun ScheduleItem(
 
 
     SwipeToDismiss(state = dismissState,
-        dismissThresholds = { FractionalThreshold(0.5f) },
+        dismissThresholds = { FractionalThreshold(0.6f) },
         background = {
             val direction = dismissState.dismissDirection ?: return@SwipeToDismiss
             val color by animateColorAsState(
@@ -125,6 +136,7 @@ fun ScheduleItem(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .defaultMinSize(minHeight = 100.dp)
                     .background(Color.Transparent)
                     .padding(top = 12.dp, bottom = 12.dp)
                     .clickable {
@@ -141,18 +153,21 @@ fun ScheduleItem(
                         text = schedule.title,
                         fontSize = 25.sp,
                         color = TextColor,
-                        modifier = Modifier.padding(5.dp)
+                        modifier = Modifier.padding(5.dp),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = schedule.memo,
                         fontSize = 15.sp,
                         color = MemoColor,
                         modifier = Modifier.padding(5.dp),
-                        maxLines = 5,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
             }
+
         }
     )
 
