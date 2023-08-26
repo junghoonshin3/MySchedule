@@ -3,7 +3,6 @@ package kr.sjh.myschedule.components
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -29,6 +28,7 @@ import kotlinx.coroutines.launch
 import kr.sjh.myschedule.data.local.entity.ScheduleEntity
 import kr.sjh.myschedule.ui.theme.MemoColor
 import kr.sjh.myschedule.ui.theme.TextColor
+import kr.sjh.myschedule.utill.clickableSingle
 
 @Composable
 fun ScheduleList(
@@ -71,6 +71,7 @@ fun ScheduleItem(
                     }
                     false
                 }
+
                 DismissValue.DismissedToEnd -> { // -> 방향 스와이프 (완료)
                     CoroutineScope(Dispatchers.Default).launch {
                         delay(200)
@@ -79,6 +80,7 @@ fun ScheduleItem(
 
                     true
                 }
+
                 DismissValue.DismissedToStart -> { // <- 방향 스와이프 (삭제)
                     CoroutineScope(Dispatchers.Default).launch {
                         delay(200)
@@ -99,7 +101,7 @@ fun ScheduleItem(
                     DismissValue.Default -> backgroundColor.copy(alpha = 0.5f) // dismissThresholds 만족 안한 상태
                     DismissValue.DismissedToEnd -> Color.Green.copy(alpha = 0.4f) // -> 방향 스와이프 (완료)
                     DismissValue.DismissedToStart -> Color.Red.copy(alpha = 0.5f) // <- 방향 스와이프 (삭제)
-                }
+                }, label = ""
             )
             val icon = when (dismissState.targetValue) {
                 DismissValue.Default -> Icons.Default.Circle
@@ -111,7 +113,7 @@ fun ScheduleItem(
                 when (dismissState.targetValue == DismissValue.Default) {
                     true -> 0.8f
                     else -> 1.5f
-                }
+                }, label = ""
             )
 
             val alignment = when (direction) {
@@ -139,7 +141,7 @@ fun ScheduleItem(
                     .defaultMinSize(minHeight = 100.dp)
                     .background(Color.Transparent)
                     .padding(top = 12.dp, bottom = 12.dp)
-                    .clickable {
+                    .clickableSingle {
                         onScheduleClick(schedule)
                     }
             )

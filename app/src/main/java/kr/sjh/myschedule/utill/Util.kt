@@ -1,8 +1,15 @@
 package kr.sjh.myschedule.utill
 
 import android.util.Log
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.MutatePriority
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.platform.debugInspectorInfo
+import androidx.compose.ui.semantics.Role
 import com.kizitonwose.calendar.compose.CalendarLayoutInfo
 import com.kizitonwose.calendar.compose.CalendarState
 import com.kizitonwose.calendar.compose.weekcalendar.WeekCalendarState
@@ -32,9 +39,11 @@ fun getWeekPageTitle(week: Week): String {
         firstDate.yearMonth == lastDate.yearMonth -> {
             firstDate.yearMonth.displayText()
         }
+
         firstDate.year == lastDate.year -> {
             "${firstDate.month.displayText(short = false)} - ${lastDate.yearMonth.displayText()}"
         }
+
         else -> {
             "${firstDate.yearMonth.displayText()} - ${lastDate.yearMonth.displayText()}"
         }
@@ -47,9 +56,7 @@ fun rememberFirstVisibleWeekAfterScroll(
 ): Week {
     val visibleWeek = remember(state) { mutableStateOf(state.firstVisibleWeek) }
     LaunchedEffect(state) {
-        snapshotFlow { state.isScrollInProgress }
-            .filter { scrolling -> !scrolling }
-            .collect {
+        snapshotFlow { state.isScrollInProgress }.filter { scrolling -> !scrolling }.collect {
                 visibleWeek.value = state.firstVisibleWeek
             }
     }
@@ -62,9 +69,7 @@ fun rememberFirstVisibleMonthAfterScroll(
 ): CalendarMonth {
     val visibleMonth = remember(state) { mutableStateOf(state.firstVisibleMonth) }
     LaunchedEffect(state) {
-        snapshotFlow { state.isScrollInProgress }
-            .filter { scrolling -> !scrolling }
-            .collect {
+        snapshotFlow { state.isScrollInProgress }.filter { scrolling -> !scrolling }.collect {
                 visibleMonth.value = state.firstVisibleMonth
             }
     }
@@ -77,8 +82,7 @@ fun rememberFirstCompletelyVisibleMonth(state: CalendarState): CalendarMonth {
     // Only take non-null values as null will be produced when the
     // list is mid-scroll as no index will be completely visible.
     LaunchedEffect(state) {
-        snapshotFlow { state.layoutInfo.completelyVisibleMonths.firstOrNull() }
-            .filterNotNull()
+        snapshotFlow { state.layoutInfo.completelyVisibleMonths.firstOrNull() }.filterNotNull()
             .collect { month -> visibleMonth.value = month }
     }
     return visibleMonth.value
@@ -103,3 +107,42 @@ private val CalendarLayoutInfo.completelyVisibleMonths: List<CalendarMonth>
         }
     }
 
+internal interface MultipleEventsCutter {
+    fun processEvent(event: () -> Unit)
+
+    companion object
+}
+
+internal fun MultipleEventsCutter.Companion.get(): MultipleEventsCutter = MultipleEventsCutterImpl()
+
+private class MultipleEventsCutterImpl : MultipleEventsCutter {
+    private val now: Long
+        get() = System.currentTimeMillis()
+
+    private var lastEventTimeMs: Long = 0
+
+    override fun processEvent(event: () -> Unit) {
+        if (now - lastEventTimeMs >= 300L) {
+            event.invoke()
+        }
+        lastEventTimeMs = now
+    }
+}
+
+fun Modifier.clickableSingle(
+    enabled: Boolean = true, onClickLabel: String? = null, role: Role? = null, onClick: () -> Unit
+) = composed(inspectorInfo = debugInspectorInfo {
+    name = "clickable"
+    properties["enabled"] = enabled
+    properties["onClickLabel"] = onClickLabel
+    properties["role"] = role
+    properties["onClick"] = onClick
+}) {
+    val multipleEventsCutter = remember { MultipleEventsCutter.get() }
+    Modifier.clickable(enabled = enabled,
+        onClickLabel = onClickLabel,
+        onClick = { multipleEventsCutter.processEvent { onClick() } },
+        role = role,
+        indication = LocalIndication.current,
+        interactionSource = remember { MutableInteractionSource() })
+}
