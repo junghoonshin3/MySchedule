@@ -16,6 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import kr.sjh.myschedule.ui.theme.Crayola
+import kr.sjh.myschedule.ui.theme.SoftBlue
 
 
 @Composable
@@ -26,7 +28,7 @@ fun CheckCircle(
     Card(
         shape = CircleShape, modifier = modifier.size(20.dp), elevation = 0.dp
     ) {
-        Box(modifier = Modifier.background(Color.White))
+        Box(modifier = Modifier.background(SoftBlue))
     }
 
 }
@@ -49,7 +51,7 @@ fun CustomToggleButton(
     ) {
         Box(
             modifier = Modifier.background(
-                if (selected) Color.DarkGray else Color.LightGray.copy(0.4f)
+                if (selected) Crayola else Color.LightGray.copy(0.4f)
             ), contentAlignment = if (selected) Alignment.TopEnd else Alignment.TopStart
         ) {
             CheckCircle(modifier = Modifier.padding(5.dp))

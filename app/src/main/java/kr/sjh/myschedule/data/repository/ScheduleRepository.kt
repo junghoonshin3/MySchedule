@@ -61,9 +61,18 @@ class ScheduleRepository constructor(
         }
     }.flowOn(Dispatchers.IO)
 
-    fun getAllBetweenSchedulesByGroup(sDt: LocalDate, eDt: LocalDate) = flow {
+    fun getYearSchedules(selectedDate: LocalDate) = flow {
         try {
-            emit(scheduleDao.getAllBetweenSchedulesByGroup(sDt, eDt))
+            emit(scheduleDao.getYearSchedules(selectedDate))
+        } catch (e: Exception) {
+            e.printStackTrace()
+            error(e)
+        }
+    }.flowOn(Dispatchers.IO)
+
+    fun insertOrUpdate(schedule: ScheduleEntity) = flow {
+        try {
+            emit(scheduleDao.insertOrUpdate(schedule))
         } catch (e: Exception) {
             e.printStackTrace()
             error(e)

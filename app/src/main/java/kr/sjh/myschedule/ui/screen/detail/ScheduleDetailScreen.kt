@@ -1,5 +1,9 @@
 package kr.sjh.myschedule.ui.screen.detail
 
+import android.app.Activity
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.*
@@ -18,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
@@ -32,16 +37,22 @@ import com.commandiron.wheel_picker_compose.core.TimeFormat
 import com.commandiron.wheel_picker_compose.core.WheelPickerDefaults
 import kr.sjh.myschedule.components.CustomToggleButton
 import kr.sjh.myschedule.data.local.entity.ScheduleEntity
-import kr.sjh.myschedule.utill.clickableWithoutRipple
+import kr.sjh.myschedule.ui.theme.*
+import kr.sjh.myschedule.utill.clickableSingle
 import java.time.LocalDateTime
 
-@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun ScheduleDetailScreen(
     onBackClick: () -> Unit,
     onSave: (ScheduleEntity) -> Unit,
     viewModel: ScheduleDetailViewModel = hiltViewModel(),
 ) {
+
+    val activity = LocalContext.current as Activity
+    //transparent
+    val color = 0xff00000000
+    transparentActivity(activity, color)
+
 
     val scrollState = rememberScrollState()
 
@@ -54,14 +65,7 @@ fun ScheduleDetailScreen(
     val alarmTime by viewModel._alarmTime.collectAsState()
 
     DetailContent(
-        scrollState,
-        onBackClick,
-        viewModel,
-        title,
-        memo,
-        isAlarm,
-        alarmTime,
-        onSave
+        scrollState, onBackClick, viewModel, title, memo, isAlarm, alarmTime, onSave
     )
 }
 
@@ -80,10 +84,10 @@ fun DetailTopBar(onBackClick: () -> Unit) {
                 .fillMaxWidth()
         ) {
             Box(contentAlignment = Alignment.CenterStart) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
+                Icon(imageVector = Icons.Default.ArrowBack,
                     contentDescription = null,
-                    modifier = Modifier.clickableWithoutRipple {
+                    tint = FontColorNomal,
+                    modifier = Modifier.clickableSingle {
                         onBackClick()
                     })
                 Text(
@@ -91,7 +95,7 @@ fun DetailTopBar(onBackClick: () -> Unit) {
                     text = "스케쥴 등록",
                     modifier = Modifier.fillMaxWidth(),
                     fontSize = 20.sp,
-                    color = Color.Black,
+                    color = FontColorNomal,
                     fontWeight = FontWeight.Bold,
                     fontStyle = FontStyle.Normal
                 )
@@ -128,39 +132,44 @@ fun DetailContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xffF7F2FA))
+            .background(SoftBlue)
             .padding(10.dp)
             .verticalScroll(scrollState)
     ) {
         Column(Modifier.fillMaxHeight()) {
             DetailTopBar(onBackClick)
-            OutlinedTextField(
+            OutlinedTextField(colors = TextFieldDefaults.outlinedTextFieldColors(
+                textColor = Color(0xff001c2d),
+                focusedBorderColor = FontColorNomal,
+                unfocusedBorderColor = FontColorNomal
+            ),
                 value = title,
                 maxLines = 2,
                 onValueChange = {
                     valiDate(it.text)
                     viewModel._title.value = it
                 },
-                label = { Text(text = "Title") },
+                label = {
+                    Text(
+                        text = "제목",
+                        color = if (isError) MaterialTheme.colors.error else FontColorNomal
+                    )
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(focusRequester),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, autoCorrect = false),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        focusManager.clearFocus()
-                    }
-                ),
+                keyboardActions = KeyboardActions(onDone = {
+                    focusManager.clearFocus()
+                }),
                 isError = isError,
                 trailingIcon = {
-                    if (isError)
-                        Icon(
-                            imageVector = Icons.Filled.Error,
-                            contentDescription = "제목을 입력해주세요",
-                            tint = MaterialTheme.colors.error
-                        )
-                }
-            )
+                    if (isError) Icon(
+                        imageVector = Icons.Filled.Error,
+                        contentDescription = "제목을 입력해주세요",
+                        tint = MaterialTheme.colors.error
+                    )
+                })
             if (isError) {
                 Text(
                     text = "제목을 입력해주세요",
@@ -179,6 +188,9 @@ fun DetailContent(
             }
 
             OutlinedTextField(
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    focusedBorderColor = FontColorNomal, unfocusedBorderColor = FontColorNomal
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp),
@@ -186,12 +198,20 @@ fun DetailContent(
                 onValueChange = {
                     viewModel._memo.value = it
                 },
-                label = { Text(text = "memo") },
+                label = {
+                    Text(
+                        text = "내용", color = FontColorNomal
+                    )
+                },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done, autoCorrect = false),
                 keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
             )
             Spacer(modifier = Modifier.height(15.dp))
-            Text(text = "알람 ON/OFF", fontSize = TextUnit(20f, TextUnitType.Sp))
+            Text(
+                text = "알람 ON/OFF",
+                fontSize = TextUnit(20f, TextUnitType.Sp),
+                color = FontColorNomal
+            )
             CustomToggleButton(selected = isAlarm, modifier = Modifier.padding(top = 10.dp)) {
                 viewModel._isAlarm.value = it
             }
@@ -224,19 +244,35 @@ fun DetailContent(
             contentAlignment = Alignment.BottomCenter
         ) {
             Button(
-                enabled = !isError && title.text.isNotEmpty(),
-                onClick = {
+                enabled = !isError && title.text.isNotEmpty(), onClick = {
                     viewModel.onSaveSchedule {
                         onSave(it)
-                        onBackClick()
                     }
-                },
-                modifier = Modifier
+                    onBackClick()
+                }, modifier = Modifier
                     .fillMaxWidth()
                     .height(62.dp)
+                    .background(Color.White)
             ) {
                 Text(text = "저장")
             }
         }
+    }
+}
+
+@Composable
+fun transparentActivity(activity: Activity, color: Long) {
+
+    //transparent
+    val bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        bitmap.eraseColor(color)
+    } else {
+        bitmap.eraseColor(color.toInt())
+    }
+    val bitmapDrawable = BitmapDrawable(LocalContext.current.resources, bitmap)
+
+    LaunchedEffect(activity) {
+        activity.window.setBackgroundDrawable(bitmapDrawable)
     }
 }

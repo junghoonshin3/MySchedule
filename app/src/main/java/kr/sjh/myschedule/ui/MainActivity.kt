@@ -19,6 +19,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import coil.ImageLoader
+import coil.decode.GifDecoder
+import coil.decode.ImageDecoderDecoder
+import coil.disk.DiskCache
+import coil.memory.MemoryCache
+import coil.request.ImageRequest
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.PermissionsRequired
@@ -37,6 +43,7 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
 
 
         setContent {
@@ -66,36 +73,13 @@ class MainActivity : ComponentActivity() {
 fun RequestPermission(
     multiplePermissionState: MultiplePermissionsState
 ) {
-    PermissionsRequired(
-        multiplePermissionsState = multiplePermissionState,
+    PermissionsRequired(multiplePermissionsState = multiplePermissionState,
         permissionsNotGrantedContent = {
 
         },
         permissionsNotAvailableContent = {
 
-        }
-    ) {
-    }
+        }) {}
 }
 
-//@OptIn(ExperimentalPermissionsApi::class)
-//@Composable
-//fun requestPermission() {
-//    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-//
-//        val permissionsState = rememberMultiplePermissionsState(
-//            permissions = listOf(
-//                Manifest.permission.POST_NOTIFICATIONS
-//            )
-//        )
-//
-//        PostNotificationPermission(
-//            multiplePermissionState = permissionsState
-//        )
-//
-//        LaunchedEffect(Unit) {
-//            permissionsState.launchMultiplePermissionRequest()
-//        }
-//    }
-//}
 
