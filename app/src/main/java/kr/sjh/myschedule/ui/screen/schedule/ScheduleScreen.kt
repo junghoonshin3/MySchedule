@@ -42,8 +42,6 @@ fun ScheduleScreen(
     onDeleteSwipe: (ScheduleEntity) -> Unit,
     onCompleteSwipe: (ScheduleEntity) -> Unit
 ) {
-
-
     Scaffold(modifier = Modifier.fillMaxSize(), floatingActionButton = {
         val interactionSource = remember { MutableInteractionSource() }
         val isPressed by interactionSource.collectIsPressedAsState()
