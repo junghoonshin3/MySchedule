@@ -12,12 +12,12 @@
 4. 주 <->월 달력 변경기능 추가
 
 ## screenshot
-
-<img src="readmeImage/Screenshot_1691825150.png" width="180px" height="320px" title="detail" alt="detail"></img>
-<img src="readmeImage/Screenshot_1691825182.png" width="180px" height="320px" title="main" alt="main"></img>
-<img src="readmeImage/Screenshot_1691825224.png" width="180px" height="320px" title="noti" alt="noti"></img>
-<img src="readmeImage/Screenshot_1692262801.png" width="180px" height="320px" title="noti" alt="noti"></img>
-<img src="readmeImage/test.gif" width="180px" height="320px" title="noti" alt="noti"></img>
+<img src="readmeImage/Screenshot_20230827_185641.png" width="180px" height="320px" title="splash" alt="splash"></img>
+<img src="readmeImage/Screenshot_20230827_185341.png" width="180px" height="320px" title="main" alt="main"></img>
+<img src="readmeImage/Screenshot_20230827_185248.png" width="180px" height="320px" title="detail" alt="detail"></img>
+<img src="readmeImage/Screenshot_20230827_185518.png" width="180px" height="320px" title="noti" alt="noti"></img>
+<img src="readmeImage/Screenshot_20230827_185706.png" width="180px" height="320px" title="noti2" alt="noti2"></img>
+<img src="readmeImage/app_test.gif" width="180px" height="320px" title="test" alt="test"></img>
 
 ## Development Environment
 

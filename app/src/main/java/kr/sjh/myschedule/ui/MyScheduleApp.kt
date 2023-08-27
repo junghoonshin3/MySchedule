@@ -118,7 +118,10 @@ fun MyScheduleApp(
             ScheduleDetailScreen(onBackClick = { appState.navigateBack() }, onSave = { schedule ->
                 if (schedule.isAlarm) {
                     addAlarm(schedule, appState.alarmScheduler)
+                } else {
+                    removeAlarm(schedule, appState.alarmScheduler)
                 }
+
                 scheduleViewModel.insertOrUpdate(schedule)
             }, viewModel = hiltViewModel()
             )
