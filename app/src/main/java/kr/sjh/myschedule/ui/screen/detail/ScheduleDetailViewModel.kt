@@ -16,6 +16,7 @@ import kr.sjh.myschedule.utill.Common.ADD_PAGE
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
 data class DetailUiState(
@@ -24,22 +25,20 @@ data class DetailUiState(
 
 @HiltViewModel
 class ScheduleDetailViewModel @Inject constructor(
-    private val repository: ScheduleRepository,
-    savedStateHandle: SavedStateHandle
-) :
-    ViewModel() {
+    private val repository: ScheduleRepository, savedStateHandle: SavedStateHandle
+) : ViewModel() {
 
     private var schedule = savedStateHandle.get<ScheduleEntity>("schedule") ?: ScheduleEntity()
 
     private var selectedDate = savedStateHandle.get<LocalDate>("selectedDate") ?: LocalDate.now()
 
-    var _title =
-        MutableStateFlow(
-            TextFieldValue(
-                text = schedule.title,
-                selection = TextRange(schedule.title.length)
-            )
+    var scheduleObject = MutableStateFlow(schedule)
+
+    var _title = MutableStateFlow(
+        TextFieldValue(
+            text = schedule.title, selection = TextRange(schedule.title.length)
         )
+    )
 
     var _memo = MutableStateFlow(schedule.memo)
 
@@ -47,7 +46,7 @@ class ScheduleDetailViewModel @Inject constructor(
 
     var _alarmTime = MutableStateFlow(
         if (schedule.id == ADD_PAGE) {
-            LocalDateTime.of(selectedDate, LocalTime.now())
+            LocalDateTime.of(selectedDate, LocalTime.now().truncatedTo(ChronoUnit.MINUTES))
         } else {
             schedule.alarmTime
         }
@@ -55,8 +54,7 @@ class ScheduleDetailViewModel @Inject constructor(
 
     var _isComplete = MutableStateFlow(schedule.isComplete)
 
-
-    fun onSaveSchedule(onSavedItem: (ScheduleEntity) -> Unit) {
+    fun onSaveSchedule(onSave: (ScheduleEntity) -> Unit, onError: (String) -> Unit) {
         val newItem = schedule.copy(
             title = _title.value.text,
             memo = _memo.value,
@@ -65,6 +63,11 @@ class ScheduleDetailViewModel @Inject constructor(
             alarmTime = _alarmTime.value,
             isComplete = _isComplete.value
         )
-        onSavedItem(newItem)
+        if (newItem.isAlarm && newItem.alarmTime < LocalDateTime.now()) {
+            onError("설정시간이 현재시간보다 이전일 수 없습니다.")
+        } else {
+            onSave(newItem)
+        }
     }
+
 }

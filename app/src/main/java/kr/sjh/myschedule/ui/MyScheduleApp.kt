@@ -7,6 +7,8 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material.rememberScaffoldState
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.os.bundleOf
@@ -17,6 +19,7 @@ import coil.ImageLoader
 import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
 import coil.util.DebugLogger
+import kotlinx.coroutines.launch
 import kr.sjh.myschedule.data.local.entity.ScheduleEntity
 import kr.sjh.myschedule.receiver.MyAlarmScheduler
 import kr.sjh.myschedule.ui.screen.detail.ScheduleDetailScreen
@@ -26,11 +29,12 @@ import kr.sjh.myschedule.utill.Common.TWEEN_DELAY
 import kr.sjh.myschedule.utill.MyScheduleAppState
 import kr.sjh.myschedule.utill.navigate
 import kr.sjh.myschedule.utill.rememberMyScheduleAppState
+import java.time.LocalDateTime
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun MyScheduleApp(
-    appState: MyScheduleAppState = rememberMyScheduleAppState()
+    appState: MyScheduleAppState = rememberMyScheduleAppState(),
 ) {
 
     val scheduleViewModel = hiltViewModel<ScheduleViewModel>()

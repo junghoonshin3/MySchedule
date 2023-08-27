@@ -1,10 +1,13 @@
 package kr.sjh.myschedule.ui.screen.detail
 
 import android.app.Activity
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import android.os.Build
+import android.util.Log
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -35,10 +38,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.commandiron.wheel_picker_compose.WheelDateTimePicker
 import com.commandiron.wheel_picker_compose.core.TimeFormat
 import com.commandiron.wheel_picker_compose.core.WheelPickerDefaults
+import kotlinx.coroutines.launch
 import kr.sjh.myschedule.components.CustomToggleButton
 import kr.sjh.myschedule.data.local.entity.ScheduleEntity
 import kr.sjh.myschedule.ui.theme.*
 import kr.sjh.myschedule.utill.clickableSingle
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Composable
@@ -51,7 +56,7 @@ fun ScheduleDetailScreen(
     val activity = LocalContext.current as Activity
     //transparent
     val color = 0xff00000000
-    transparentActivity(activity, color)
+    setTransparentActivity(activity, color)
 
 
     val scrollState = rememberScrollState()
@@ -124,20 +129,26 @@ fun DetailContent(
         mutableStateOf(false)
     }
 
-    fun valiDate(text: String) {
+    fun validDate(text: String) {
         isError = text.isEmpty()
 
     }
+
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(SoftBlue)
             .padding(10.dp)
-            .verticalScroll(scrollState)
+
     ) {
-        Column(Modifier.fillMaxHeight()) {
-            DetailTopBar(onBackClick)
+        DetailTopBar(onBackClick)
+        Column(
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+        ) {
             OutlinedTextField(colors = TextFieldDefaults.outlinedTextFieldColors(
                 textColor = Color(0xff001c2d),
                 focusedBorderColor = FontColorNomal,
@@ -146,7 +157,7 @@ fun DetailContent(
                 value = title,
                 maxLines = 2,
                 onValueChange = {
-                    valiDate(it.text)
+                    validDate(it.text)
                     viewModel._title.value = it
                 },
                 label = {
@@ -234,36 +245,34 @@ fun DetailContent(
                     viewModel._alarmTime.value = it
                 }
             }
-        }
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-        )
-        Box(
-            contentAlignment = Alignment.BottomCenter
-        ) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+            )
             Button(
-                enabled = !isError && title.text.isNotEmpty(), onClick = {
-                    viewModel.onSaveSchedule {
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = Color.White, disabledBackgroundColor = Color.LightGray
+                ), enabled = !isError && title.text.isNotEmpty(), onClick = {
+                    viewModel.onSaveSchedule(onSave = {
                         onSave(it)
-                    }
-                    onBackClick()
+                        onBackClick()
+                    }, onError = {
+                        showToast(context, it)
+                    })
                 }, modifier = Modifier
                     .fillMaxWidth()
                     .height(62.dp)
-                    .background(Color.White)
             ) {
                 Text(text = "저장")
             }
         }
+
     }
 }
 
 @Composable
-fun transparentActivity(activity: Activity, color: Long) {
-
-    //transparent
+fun setTransparentActivity(activity: Activity, color: Long) {
     val bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
         bitmap.eraseColor(color)
@@ -275,4 +284,8 @@ fun transparentActivity(activity: Activity, color: Long) {
     LaunchedEffect(activity) {
         activity.window.setBackgroundDrawable(bitmapDrawable)
     }
+}
+
+fun showToast(context: Context, msg: String) {
+    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
 }
