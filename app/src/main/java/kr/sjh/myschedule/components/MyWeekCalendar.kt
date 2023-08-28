@@ -61,6 +61,7 @@ import com.kizitonwose.calendar.compose.WeekCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
 import com.kizitonwose.calendar.compose.weekcalendar.WeekCalendarState
 import com.kizitonwose.calendar.compose.weekcalendar.rememberWeekCalendarState
+import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.DayPosition
 import com.kizitonwose.calendar.core.WeekDay
 import com.kizitonwose.calendar.core.WeekDayPosition
@@ -118,9 +119,48 @@ fun MyWeekCalendar(
         firstDayOfWeek = DayOfWeek.MONDAY,
     )
 
+    val week = rememberFirstVisibleWeekAfterScroll(weekState)
+    val month = rememberFirstVisibleMonthAfterScroll(monthState)
 
+    LaunchedEffect(key1 = week) {
+        if (isWeekMode) {
+            val date = if (week.days.contains(WeekDay(currentDate, WeekDayPosition.RangeDate))) {
+                if (currentDate < week.days[selectedDate.dayOfWeek.value - 1].date) {
+                    week.days[selectedDate.dayOfWeek.value - 1].date
+                } else {
+                    currentDate
+                }
+            } else {
+                week.days[selectedDate.dayOfWeek.value - 1].date
+            }
+            onSelectedDate(date)
+        }
 
-    CalendarTitle(selectedDate.yearMonth,
+    }
+
+    LaunchedEffect(key1 = month) {
+        if (!isWeekMode) {
+            val date = if (month.yearMonth.isValidDay(selectedDate.dayOfMonth)) {
+                when {
+                    month.yearMonth == currentDate.yearMonth && month.yearMonth.month == currentDate.month && month.yearMonth.atDay(
+                        selectedDate.dayOfMonth
+                    ) <= currentDate -> currentDate
+
+                    month.yearMonth.month != selectedDate.month -> month.yearMonth.atDay(
+                        selectedDate.dayOfMonth
+                    )
+
+                    else -> selectedDate
+                }
+            } else {
+                monthState.firstVisibleMonth.yearMonth.atEndOfMonth()
+            }
+            Log.i("sjh", "month :${date}")
+            onSelectedDate(date)
+        }
+    }
+
+    CalendarTitle(yearMonth = selectedDate.yearMonth,
         modifier = modifier.fillMaxWidth(),
         onSwitchCalendarType = {
             isWeekMode = !isWeekMode
@@ -140,6 +180,7 @@ fun MyWeekCalendar(
                 } else {
                     monthState.animateScrollToMonth(currentDate.yearMonth)
                 }
+                onSelectedDate(currentDate)
             }
         })
 
@@ -221,47 +262,6 @@ fun CalendarContent(
     isWeekMode: Boolean,
     onSelectedDate: (LocalDate) -> Unit
 ) {
-    val week = rememberFirstVisibleWeekAfterScroll(weekState)
-    val month = rememberFirstVisibleMonthAfterScroll(monthState)
-
-    LaunchedEffect(key1 = week) {
-        if (isWeekMode) {
-            val date = if (week.days.contains(WeekDay(currentDate, WeekDayPosition.RangeDate))) {
-                if (currentDate < week.days[selectedDate.dayOfWeek.value - 1].date) {
-                    week.days[selectedDate.dayOfWeek.value - 1].date
-                } else {
-                    currentDate
-                }
-            } else {
-                week.days[selectedDate.dayOfWeek.value - 1].date
-            }
-            onSelectedDate(date)
-        }
-
-    }
-
-    LaunchedEffect(key1 = month) {
-        if (!isWeekMode) {
-            val date = if (month.yearMonth.isValidDay(selectedDate.dayOfMonth)) {
-                when {
-                    month.yearMonth == currentDate.yearMonth && month.yearMonth.month == currentDate.month && month.yearMonth.atDay(
-                        selectedDate.dayOfMonth
-                    ) <= currentDate -> currentDate
-
-                    month.yearMonth.month != selectedDate.month -> month.yearMonth.atDay(
-                        selectedDate.dayOfMonth
-                    )
-
-                    else -> selectedDate
-                }
-            } else {
-                monthState.firstVisibleMonth.yearMonth.atStartOfMonth()
-            }
-            Log.i("sjh", "month :${date}")
-            onSelectedDate(date)
-        }
-    }
-
     Card(shape = RoundedCornerShape(bottomEnd = 10.dp, bottomStart = 10.dp)) {
         AnimatedContent(modifier = modifier, targetState = isWeekMode, transitionSpec = {
             slideInVertically(
@@ -313,12 +313,13 @@ fun CalendarContent(
 
 @Composable
 fun CalendarTitle(
-    currentMonth: YearMonth,
+    yearMonth: YearMonth,
     isWeekMode: Boolean,
     modifier: Modifier,
     onTodayCalendar: () -> Unit,
     onSwitchCalendarType: () -> Unit
 ) {
+
     val context = LocalContext.current
     val imageLoader = ImageLoader.Builder(context).logger(DebugLogger(Log.DEBUG)).components {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -327,6 +328,7 @@ fun CalendarTitle(
             add(GifDecoder.Factory())
         }
     }.build()
+
     Row(
         modifier = modifier
             .height(50.dp)
@@ -339,7 +341,7 @@ fun CalendarTitle(
                 .height(35.dp)
                 .width(35.dp)
                 .background(SoftBlue),
-            model = getImageRequest(context, getMonthId(currentMonth.month)),
+            model = getImageRequest(context, getMonthId(yearMonth.month)),
             contentDescription = "monthIcon",
             imageLoader = imageLoader,
             colorFilter = ColorFilter.tint(Color.White)
@@ -349,7 +351,7 @@ fun CalendarTitle(
             modifier = Modifier
                 .wrapContentSize()
                 .padding(start = 10.dp),
-            text = currentMonth.displayText(),
+            text = yearMonth.displayText(),
             fontSize = 22.sp,
             textAlign = TextAlign.Start,
             fontWeight = FontWeight.Medium,

@@ -18,17 +18,6 @@ import java.time.LocalDate
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 
-
-@Composable
-fun Modifier.clickableWithoutRipple(doSomeThing: () -> Unit): Modifier {
-    val interactionSource = remember { MutableInteractionSource() }
-    return clickable(
-        interactionSource = interactionSource, indication = null
-    ) {
-        doSomeThing()
-    }
-}
-
 fun NavController.navigate(
     route: String,
     args: Bundle,
@@ -69,8 +58,8 @@ class MyScheduleAppState(
     val alarmScheduler: MyAlarmScheduler
 ) {
 
-    fun navigateBack() {
-        navController.popBackStack()
+    fun navigateBack(route: String, inclusive: Boolean) {
+        navController.popBackStack(route, inclusive)
     }
 }
 

@@ -14,6 +14,10 @@ import com.kizitonwose.calendar.compose.CalendarLayoutInfo
 import com.kizitonwose.calendar.compose.CalendarState
 import com.kizitonwose.calendar.compose.weekcalendar.WeekCalendarState
 import com.kizitonwose.calendar.core.*
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import java.time.DayOfWeek
@@ -27,27 +31,9 @@ fun YearMonth.displayText(short: Boolean = false): String {
     return "${this.month.displayText(short = short)} ${this.year}"
 }
 
-fun Month.displayText(short: Boolean = true): String {
+private fun Month.displayText(short: Boolean = true): String {
     val style = if (short) TextStyle.SHORT else TextStyle.FULL
     return getDisplayName(style, Locale.KOREAN)
-}
-
-fun getWeekPageTitle(week: Week): String {
-    val firstDate = week.days.first().date
-    val lastDate = week.days.last().date
-    return when {
-        firstDate.yearMonth == lastDate.yearMonth -> {
-            firstDate.yearMonth.displayText()
-        }
-
-        firstDate.year == lastDate.year -> {
-            "${firstDate.month.displayText(short = false)} - ${lastDate.yearMonth.displayText()}"
-        }
-
-        else -> {
-            "${firstDate.yearMonth.displayText()} - ${lastDate.yearMonth.displayText()}"
-        }
-    }
 }
 
 @Composable
@@ -57,8 +43,8 @@ fun rememberFirstVisibleWeekAfterScroll(
     val visibleWeek = remember(state) { mutableStateOf(state.firstVisibleWeek) }
     LaunchedEffect(state) {
         snapshotFlow { state.isScrollInProgress }.filter { scrolling -> !scrolling }.collect {
-                visibleWeek.value = state.firstVisibleWeek
-            }
+            visibleWeek.value = state.firstVisibleWeek
+        }
     }
     return visibleWeek.value
 }
@@ -70,20 +56,9 @@ fun rememberFirstVisibleMonthAfterScroll(
     val visibleMonth = remember(state) { mutableStateOf(state.firstVisibleMonth) }
     LaunchedEffect(state) {
         snapshotFlow { state.isScrollInProgress }.filter { scrolling -> !scrolling }.collect {
-                visibleMonth.value = state.firstVisibleMonth
-            }
-    }
-    return visibleMonth.value
-}
-
-@Composable
-fun rememberFirstCompletelyVisibleMonth(state: CalendarState): CalendarMonth {
-    val visibleMonth = remember(state) { mutableStateOf(state.firstVisibleMonth) }
-    // Only take non-null values as null will be produced when the
-    // list is mid-scroll as no index will be completely visible.
-    LaunchedEffect(state) {
-        snapshotFlow { state.layoutInfo.completelyVisibleMonths.firstOrNull() }.filterNotNull()
-            .collect { month -> visibleMonth.value = month }
+            Log.i("sjh", "why not working?")
+            visibleMonth.value = state.firstVisibleMonth
+        }
     }
     return visibleMonth.value
 }
@@ -113,20 +88,34 @@ internal interface MultipleEventsCutter {
     companion object
 }
 
-internal fun MultipleEventsCutter.Companion.get(): MultipleEventsCutter = MultipleEventsCutterImpl()
+interface MultipleEventsCutterManager {
+    fun processEvent(event: () -> Unit)
+}
 
-private class MultipleEventsCutterImpl : MultipleEventsCutter {
-    private val now: Long
-        get() = System.currentTimeMillis()
-
-    private var lastEventTimeMs: Long = 0
-
-    override fun processEvent(event: () -> Unit) {
-        if (now - lastEventTimeMs >= 300L) {
-            event.invoke()
-        }
-        lastEventTimeMs = now
+@OptIn(FlowPreview::class)
+@Composable
+fun <T> multipleEventsCutter(
+    content: @Composable (MultipleEventsCutterManager) -> T
+): T {
+    val debounceState = remember {
+        MutableSharedFlow<() -> Unit>(
+            replay = 0, extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST
+        )
     }
+
+    val result = content(object : MultipleEventsCutterManager {
+        override fun processEvent(event: () -> Unit) {
+            debounceState.tryEmit(event)
+        }
+    })
+
+    LaunchedEffect(true) {
+        debounceState.debounce(300L).collect { onClick ->
+                onClick.invoke()
+            }
+    }
+
+    return result
 }
 
 fun Modifier.clickableSingle(
@@ -138,11 +127,12 @@ fun Modifier.clickableSingle(
     properties["role"] = role
     properties["onClick"] = onClick
 }) {
-    val multipleEventsCutter = remember { MultipleEventsCutter.get() }
-    Modifier.clickable(enabled = enabled,
-        onClickLabel = onClickLabel,
-        onClick = { multipleEventsCutter.processEvent { onClick() } },
-        role = role,
-        indication = LocalIndication.current,
-        interactionSource = remember { MutableInteractionSource() })
+    multipleEventsCutter { manager ->
+        Modifier.clickable(enabled = enabled,
+            onClickLabel = onClickLabel,
+            onClick = { manager.processEvent { onClick() } },
+            role = role,
+            indication = LocalIndication.current,
+            interactionSource = remember { MutableInteractionSource() })
+    }
 }
