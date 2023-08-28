@@ -52,7 +52,6 @@ fun ScheduleDetailScreen(
     onSave: (ScheduleEntity) -> Unit,
     viewModel: ScheduleDetailViewModel = hiltViewModel(),
 ) {
-
     val activity = LocalContext.current as Activity
     //transparent
     val color = 0xff00000000

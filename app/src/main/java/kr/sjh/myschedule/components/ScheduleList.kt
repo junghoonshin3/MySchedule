@@ -180,7 +180,6 @@ fun ScheduleItem(
                         modifier = Modifier.constrainAs(timer) {
                             end.linkTo(parent.end)
                             top.linkTo(title.top)
-                            bottom.linkTo(title.bottom)
                         })
                     Text(text = if (isAlarm) schedule.alarmTime.toLocalTime().toString() else "",
                         fontSize = 18.sp,
@@ -195,33 +194,6 @@ fun ScheduleItem(
 
                 }
             }
-
-//                Column(
-//                    modifier = Modifier
-//                        .fillMaxSize()
-//                        .padding(10.dp)
-//                        .background(Color.White)
-//                ) {
-//                    Text(
-//                        text = schedule.title,
-//                        fontSize = 30.sp,
-//                        fontWeight = FontWeight.ExtraBold,
-//                        color = TextColor,
-//                        modifier = Modifier.padding(5.dp),
-//                        maxLines = 1,
-//                        overflow = TextOverflow.Ellipsis
-//                    )
-//                    Text(
-//                        text = schedule.memo,
-//                        fontSize = 15.sp,
-//                        color = MemoColor,
-//                        modifier = Modifier.padding(5.dp),
-//                        maxLines = 2,
-//                        overflow = TextOverflow.Ellipsis
-//                    )
-//                }
-//            }
-
         })
 
 }

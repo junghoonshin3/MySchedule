@@ -115,7 +115,9 @@ fun MyScheduleApp(
                 else -> null
             }
         }) {
-            ScheduleDetailScreen(onBackClick = { appState.navigateBack() }, onSave = { schedule ->
+            ScheduleDetailScreen(onBackClick = {
+                appState.navigateBack(Screen.Schedule.route, false)
+            }, onSave = { schedule ->
                 if (schedule.isAlarm) {
                     addAlarm(schedule, appState.alarmScheduler)
                 } else {

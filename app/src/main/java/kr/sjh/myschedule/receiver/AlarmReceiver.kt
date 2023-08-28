@@ -5,6 +5,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
+import android.graphics.Color
+import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import kr.sjh.myschedule.R
 import kr.sjh.myschedule.ui.theme.SoftBlue
@@ -30,6 +32,8 @@ class AlarmReceiver : BroadcastReceiver() {
         val notification = NotificationCompat.Builder(context, CHANNEL_ID).setLargeIcon(largeIcon)
             .setSmallIcon(R.drawable.ic_notification)
             .setColor(context.resources.getColor(R.color.soft_blue)).setContentTitle(title)
+            .setVibrate(longArrayOf(1000, 1000, 1000, 1000, 1000))
+            .setSound(Settings.System.DEFAULT_NOTIFICATION_URI).setLights(Color.BLUE, 3000, 3000)
             .setContentText(content).build()
 
         notificationManager.notify(1, notification)
