@@ -41,6 +41,7 @@ import java.time.Month
 
 @Composable
 fun ScheduleScreen(
+    onKeepOnScreenCondition: () -> Unit,
     allYearSchedules: List<ScheduleEntity>,
     selectedDate: LocalDate,
     onScheduleClick: (ScheduleEntity?) -> Unit,
@@ -48,13 +49,17 @@ fun ScheduleScreen(
     onDeleteSwipe: (ScheduleEntity) -> Unit,
     onCompleteSwipe: (ScheduleEntity) -> Unit
 ) {
+
+    LaunchedEffect(key1 = Unit, block = {
+        onKeepOnScreenCondition()
+    })
+
     Scaffold(modifier = Modifier.fillMaxSize(), floatingActionButton = {
         val interactionSource = remember { MutableInteractionSource() }
         val isPressed by interactionSource.collectIsPressedAsState()
         val color = if (isPressed) Crayola else Color.White
 
-        FloatingActionButton(
-            backgroundColor = DarkGray,
+        FloatingActionButton(backgroundColor = DarkGray,
             interactionSource = interactionSource,
             onClick = {
                 onScheduleClick(null)

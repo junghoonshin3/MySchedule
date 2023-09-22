@@ -18,11 +18,16 @@ import kr.sjh.myschedule.ui.theme.MyScheduleTheme
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    private var keepOnScreenCondition = true
+
     @OptIn(ExperimentalPermissionsApi::class)
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        installSplashScreen()
+        installSplashScreen().setKeepOnScreenCondition {
+            keepOnScreenCondition
+        }
 
         setContent {
             MyScheduleTheme {
@@ -40,7 +45,9 @@ class MainActivity : ComponentActivity() {
                         permissionsState.launchMultiplePermissionRequest()
                     }
                 }
-                MyScheduleApp()
+                MyScheduleApp(onKeepOnScreenCondition = {
+                    keepOnScreenCondition = false
+                })
             }
         }
     }

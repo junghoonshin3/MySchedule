@@ -34,6 +34,7 @@ import java.time.LocalDateTime
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun MyScheduleApp(
+    onKeepOnScreenCondition: () -> Unit,
     appState: MyScheduleAppState = rememberMyScheduleAppState(),
 ) {
 
@@ -51,7 +52,8 @@ fun MyScheduleApp(
         composable(
             Screen.Schedule.route,
         ) {
-            ScheduleScreen(allYearSchedules = uiState.allYearSchedules,
+            ScheduleScreen(onKeepOnScreenCondition = onKeepOnScreenCondition,
+                allYearSchedules = uiState.allYearSchedules,
                 selectedDate = appState.selectedDate.value,
                 onScheduleClick = { scheduleEntity ->
                     appState.navController.navigate(
