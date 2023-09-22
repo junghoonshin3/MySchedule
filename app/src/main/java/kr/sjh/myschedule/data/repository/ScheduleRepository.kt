@@ -14,15 +14,6 @@ class ScheduleRepository constructor(
     private val scheduleDao: ScheduleDao
 ) {
 
-    fun getAllSchedules(regDt: LocalDate): Flow<List<ScheduleEntity>> = flow {
-        try {
-            emit(scheduleDao.getAllSchedules(regDt))
-        } catch (e: Exception) {
-            e.printStackTrace()
-            error(e)
-        }
-    }.flowOn(Dispatchers.IO)
-
     fun insertSchedule(
         schedule: ScheduleEntity
     ) = flow {
@@ -37,15 +28,6 @@ class ScheduleRepository constructor(
     fun deleteSchedule(id: Long) = flow {
         try {
             emit(scheduleDao.deleteSchedule(id))
-        } catch (e: Exception) {
-            e.printStackTrace()
-            error(e)
-        }
-    }.flowOn(Dispatchers.IO)
-
-    fun getSchedule(id: Long): Flow<ScheduleEntity> = flow {
-        try {
-            emit(scheduleDao.getSchedule(id))
         } catch (e: Exception) {
             e.printStackTrace()
             error(e)
