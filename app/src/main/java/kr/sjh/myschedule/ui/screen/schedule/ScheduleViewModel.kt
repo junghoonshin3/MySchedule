@@ -10,15 +10,19 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kr.sjh.myschedule.data.local.entity.ScheduleEntity
+import kr.sjh.myschedule.data.repository.Result
 import kr.sjh.myschedule.data.repository.ScheduleRepository
 import java.time.LocalDate
 import javax.inject.Inject
 
 
 data class ScheduleUiState(
-    var allYearSchedules: List<ScheduleEntity> = emptyList(),
+    var allYearSchedules: List<ScheduleEntity> = emptyList()
+)
+
+data class ErrorUiState(
+    var throwable: Throwable?
 )
 
 @HiltViewModel
@@ -27,6 +31,9 @@ class ScheduleViewModel @Inject constructor(private val repository: ScheduleRepo
 
     private var _uiState = MutableStateFlow(ScheduleUiState())
     val uiState: StateFlow<ScheduleUiState> = _uiState
+
+    private var _errorState = MutableStateFlow(ErrorUiState(null))
+    val errorState: StateFlow<ErrorUiState> = _errorState
 
     init {
         getAllYearSchedules(LocalDate.now())
@@ -62,8 +69,30 @@ class ScheduleViewModel @Inject constructor(private val repository: ScheduleRepo
 
     fun getAllYearSchedules(selectedDate: LocalDate) {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.getYearSchedules(selectedDate).collectLatest { schedules ->
-                _uiState.value = ScheduleUiState(schedules)
+            repository.getYearSchedules(selectedDate).collectLatest { result ->
+                when (result) {
+                    is Result.Success -> {
+                        _uiState.update {
+                            it.copy(
+                                allYearSchedules = result.data
+                            )
+                        }
+                    }
+
+                    is Result.Fail -> {
+                        _errorState.update {
+                            it.copy(
+                                throwable = result.throwable
+                            )
+                        }
+                    }
+
+                    is Result.Loading -> {
+
+                    }
+
+                    else -> {}
+                }
             }
         }
     }
