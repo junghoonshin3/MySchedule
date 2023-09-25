@@ -125,7 +125,6 @@ fun MyScheduleApp(
                 } else {
                     removeAlarm(schedule, appState.alarmScheduler)
                 }
-
                 scheduleViewModel.insertOrUpdate(schedule)
             }, viewModel = hiltViewModel()
             )

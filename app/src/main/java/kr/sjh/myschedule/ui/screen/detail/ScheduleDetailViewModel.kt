@@ -32,8 +32,6 @@ class ScheduleDetailViewModel @Inject constructor(
 
     private var selectedDate = savedStateHandle.get<LocalDate>("selectedDate") ?: LocalDate.now()
 
-    var scheduleObject = MutableStateFlow(schedule)
-
     var _title = MutableStateFlow(
         TextFieldValue(
             text = schedule.title, selection = TextRange(schedule.title.length)
@@ -63,7 +61,7 @@ class ScheduleDetailViewModel @Inject constructor(
             alarmTime = _alarmTime.value,
             isComplete = _isComplete.value
         )
-        if (newItem.isAlarm && newItem.alarmTime < LocalDateTime.now()) {
+        if (newItem.isAlarm && newItem.alarmTime <= LocalDateTime.now()) {
             onError("설정시간이 현재시간보다 이전일 수 없습니다.")
         } else {
             onSave(newItem)

@@ -19,7 +19,9 @@ val PaleRobinEggBlue = Color(
     0xff93EDE3
 )
 val VanillaIce = Color(0xffED939D)
-
+val Transparent = Color(
+    0xff00000000
+)
 //font
 val FontColorNomal = Color(0xffF4FAFD)
 

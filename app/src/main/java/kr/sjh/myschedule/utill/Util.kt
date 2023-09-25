@@ -56,7 +56,6 @@ fun rememberFirstVisibleMonthAfterScroll(
     val visibleMonth = remember(state) { mutableStateOf(state.firstVisibleMonth) }
     LaunchedEffect(state) {
         snapshotFlow { state.isScrollInProgress }.filter { scrolling -> !scrolling }.collect {
-            Log.i("sjh", "why not working?")
             visibleMonth.value = state.firstVisibleMonth
         }
     }

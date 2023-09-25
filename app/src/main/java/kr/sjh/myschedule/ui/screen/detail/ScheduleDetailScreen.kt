@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
@@ -40,6 +41,7 @@ import com.commandiron.wheel_picker_compose.core.TimeFormat
 import com.commandiron.wheel_picker_compose.core.WheelPickerDefaults
 import kotlinx.coroutines.launch
 import kr.sjh.myschedule.components.CustomToggleButton
+import kr.sjh.myschedule.components.SingleButton
 import kr.sjh.myschedule.data.local.entity.ScheduleEntity
 import kr.sjh.myschedule.ui.theme.*
 import kr.sjh.myschedule.utill.clickableSingle
@@ -53,10 +55,6 @@ fun ScheduleDetailScreen(
     viewModel: ScheduleDetailViewModel = hiltViewModel(),
 ) {
     val activity = LocalContext.current as Activity
-    //transparent
-    val color = 0xff00000000
-    setTransparentActivity(activity, color)
-
 
     val scrollState = rememberScrollState()
 
@@ -67,6 +65,8 @@ fun ScheduleDetailScreen(
     val isAlarm by viewModel._isAlarm.collectAsState()
 
     val alarmTime by viewModel._alarmTime.collectAsState()
+
+    setTransparentActivity(activity, Color.Transparent)
 
     DetailContent(
         scrollState, onBackClick, viewModel, title, memo, isAlarm, alarmTime, onSave
@@ -249,35 +249,28 @@ fun DetailContent(
                     .weight(1f)
                     .fillMaxHeight()
             )
-            Button(
-                colors = ButtonDefaults.buttonColors(
-                    backgroundColor = Color.White, disabledBackgroundColor = Color.LightGray
-                ), enabled = !isError && title.text.isNotEmpty(), onClick = {
-                    viewModel.onSaveSchedule(onSave = {
-                        onSave(it)
-                        onBackClick()
-                    }, onError = {
-                        showToast(context, it)
-                    })
-                }, modifier = Modifier
-                    .fillMaxWidth()
-                    .height(62.dp)
-            ) {
-                Text(text = "저장")
-            }
+            SingleButton(modifier = Modifier
+                .fillMaxWidth()
+                .height(62.dp), onClick = {
+                viewModel.onSaveSchedule(onSave = {
+                    onSave(it)
+                    onBackClick()
+                }, onError = {
+                    showToast(context, it)
+                })
+            }, content = { Text(text = "저장") }, colors = ButtonDefaults.buttonColors(
+                backgroundColor = Color.White, disabledBackgroundColor = Color.LightGray
+            ), enable = !isError && title.text.isNotEmpty()
+            )
         }
 
     }
 }
 
 @Composable
-fun setTransparentActivity(activity: Activity, color: Long) {
+fun setTransparentActivity(activity: Activity, color: Color) {
     val bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        bitmap.eraseColor(color)
-    } else {
-        bitmap.eraseColor(color.toInt())
-    }
+    bitmap.eraseColor(color.toArgb())
     val bitmapDrawable = BitmapDrawable(LocalContext.current.resources, bitmap)
 
     LaunchedEffect(activity) {

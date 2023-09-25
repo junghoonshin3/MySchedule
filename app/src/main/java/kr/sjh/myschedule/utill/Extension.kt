@@ -2,6 +2,7 @@ package kr.sjh.myschedule.utill
 
 import android.content.Context
 import android.os.Bundle
+import android.widget.Button
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.*
@@ -62,11 +63,3 @@ class MyScheduleAppState(
         navController.popBackStack(route, inclusive)
     }
 }
-
-/**
- * If the lifecycle is not resumed it means this NavBackStackEntry already processed a nav event.
- *
- * This is used to de-duplicate navigation events.
- */
-private fun NavBackStackEntry.lifecycleIsResumed() =
-    lifecycle.currentState == Lifecycle.State.RESUMED
