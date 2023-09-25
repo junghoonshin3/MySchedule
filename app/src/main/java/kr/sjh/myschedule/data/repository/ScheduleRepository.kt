@@ -1,7 +1,6 @@
 package kr.sjh.myschedule.data.repository
 
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kr.sjh.myschedule.data.local.dao.ScheduleDao
@@ -13,18 +12,6 @@ import javax.inject.Singleton
 class ScheduleRepository constructor(
     private val scheduleDao: ScheduleDao
 ) {
-
-    fun insertSchedule(
-        schedule: ScheduleEntity
-    ) = flow {
-        try {
-            emit(scheduleDao.insertSchedule(schedule))
-        } catch (e: Exception) {
-            e.printStackTrace()
-            error(e)
-        }
-    }.flowOn(Dispatchers.IO)
-
     fun deleteSchedule(id: Long) = flow {
         try {
             emit(scheduleDao.deleteSchedule(id))
@@ -44,11 +31,11 @@ class ScheduleRepository constructor(
     }.flowOn(Dispatchers.IO)
 
     fun getYearSchedules(selectedDate: LocalDate) = flow {
+        emit(Result.Loading)
         try {
-            emit(scheduleDao.getYearSchedules(selectedDate))
+            emit(Result.Success(scheduleDao.getYearSchedules(selectedDate)))
         } catch (e: Exception) {
-            e.printStackTrace()
-            error(e)
+            emit(Result.Fail(e))
         }
     }.flowOn(Dispatchers.IO)
 
