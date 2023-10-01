@@ -1,10 +1,14 @@
 package kr.sjh.myschedule.data.repository
 
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kr.sjh.myschedule.data.local.dao.ScheduleDao
 import kr.sjh.myschedule.data.local.entity.ScheduleEntity
+import kr.sjh.myschedule.utill.Common.ADD_PAGE
 import java.time.LocalDate
 import javax.inject.Singleton
 
@@ -32,12 +36,13 @@ class ScheduleRepository constructor(
 
     fun getYearSchedules(selectedDate: LocalDate) = flow {
         emit(Result.Loading)
-        try {
-            emit(Result.Success(scheduleDao.getYearSchedules(selectedDate)))
-        } catch (e: Exception) {
-            emit(Result.Fail(e))
+        scheduleDao.getYearSchedules(selectedDate).collect {
+            Log.i("sjh", "size : ${it.size}")
+            emit(Result.Success(it))
         }
-    }.flowOn(Dispatchers.IO)
+    }.catch {
+        emit(Result.Fail(it))
+    }
 
     fun insertOrUpdate(schedule: ScheduleEntity) = flow {
         try {
@@ -47,5 +52,19 @@ class ScheduleRepository constructor(
             error(e)
         }
     }.flowOn(Dispatchers.IO)
+
+    fun getSchedule(userId: Long) = flow {
+        emit(Result.Loading)
+        try {
+            if (userId == ADD_PAGE.toLong()) {
+                emit(Result.Success(ScheduleEntity()))
+            } else {
+                emit(Result.Success(scheduleDao.getSchedule(userId)))
+            }
+
+        } catch (e: Exception) {
+            error(Result.Fail(e))
+        }
+    }
 
 }
