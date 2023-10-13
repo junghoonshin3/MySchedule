@@ -49,7 +49,6 @@ class ScheduleViewModel @Inject constructor(private val repository: ScheduleRepo
     }
 
     fun insertOrUpdate(schedule: ScheduleEntity) {
-        Log.i("schedule", "id >>>>>>>>>>>>>> ${schedule.id}")
         viewModelScope.launch(Dispatchers.IO) {
             repository.insertOrUpdate(schedule).collectLatest {
                 schedule.id = it
@@ -98,7 +97,6 @@ class ScheduleViewModel @Inject constructor(private val repository: ScheduleRepo
     }
 
     private fun remove(schedule: ScheduleEntity) {
-        Log.i("sjh", "remove : ${schedule.id}")
         val removeList = _uiState.value.allYearSchedules.toMutableList()
         removeList.remove(schedule)
         _uiState.update {
@@ -112,7 +110,6 @@ class ScheduleViewModel @Inject constructor(private val repository: ScheduleRepo
         if (findSchedule != null) {
             val index = updateList.indexOf(findSchedule)
             updateList[index] = schedule
-            Log.i("sjh", "findSchedule >> $index")
         } else {
             updateList.add(schedule)
         }

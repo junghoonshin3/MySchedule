@@ -155,7 +155,6 @@ fun MyWeekCalendar(
             } else {
                 monthState.firstVisibleMonth.yearMonth.atEndOfMonth()
             }
-            Log.i("sjh", "month :${date}")
             onSelectedDate(date)
         }
     }

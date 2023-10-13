@@ -37,7 +37,6 @@ class ScheduleRepository constructor(
     fun getYearSchedules(selectedDate: LocalDate) = flow {
         emit(Result.Loading)
         scheduleDao.getYearSchedules(selectedDate).collect {
-            Log.i("sjh", "size : ${it.size}")
             emit(Result.Success(it))
         }
     }.catch {
