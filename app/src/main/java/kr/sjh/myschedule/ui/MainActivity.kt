@@ -1,13 +1,20 @@
 package kr.sjh.myschedule.ui
 
 import android.Manifest
+import android.animation.ObjectAnimator
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
+import android.util.Property
+import android.view.View
+import android.view.animation.AnticipateInterpolator
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.compose.material.*
 import androidx.compose.runtime.*
+import androidx.core.animation.doOnEnd
+import androidx.core.splashscreen.SplashScreen
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
@@ -21,12 +28,29 @@ class MainActivity : ComponentActivity() {
 
     private var keepOnScreenCondition = true
 
+
     @OptIn(ExperimentalPermissionsApi::class)
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        installSplashScreen().setKeepOnScreenCondition {
-            keepOnScreenCondition
+        installSplashScreen().apply {
+            setKeepOnScreenCondition {
+                return@setKeepOnScreenCondition keepOnScreenCondition
+            }
+            setOnExitAnimationListener { splashScreenView ->
+                val slideUp = ObjectAnimator.ofFloat(
+                    splashScreenView.iconView,
+                    View.TRANSLATION_Y,
+                    0f,
+                    -splashScreenView.iconView.height.toFloat()
+                )
+                slideUp.interpolator = AnticipateInterpolator()
+                slideUp.duration = 500L
+                slideUp.doOnEnd {
+                    splashScreenView.remove()
+                }
+                slideUp.start()
+            }
         }
 
         setContent {
@@ -50,6 +74,10 @@ class MainActivity : ComponentActivity() {
                 })
             }
         }
+    }
+
+    fun startSplash() {
+
     }
 }
 
