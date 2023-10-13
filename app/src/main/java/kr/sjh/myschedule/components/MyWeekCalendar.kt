@@ -4,12 +4,17 @@ import android.content.Context
 import android.os.Build
 import android.util.Log
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.animation.with
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -47,6 +52,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.ImageLoader
@@ -263,15 +269,31 @@ fun CalendarContent(
 ) {
     Card(shape = RoundedCornerShape(bottomEnd = 10.dp, bottomStart = 10.dp)) {
         AnimatedContent(modifier = modifier, targetState = isWeekMode, transitionSpec = {
-            slideInVertically(
-                initialOffsetY = { 0 },
-                animationSpec = tween(durationMillis = 150, easing = LinearOutSlowInEasing)
-            ).togetherWith(
-                slideOutVertically(
-                    targetOffsetY = { 0 },
-                    animationSpec = tween(durationMillis = 250, easing = FastOutLinearInEasing)
+            fadeIn(
+                animationSpec = tween(
+                    150,
+                    150
                 )
-            )
+            ) togetherWith fadeOut(
+                animationSpec = tween(
+                    150,
+                    150
+                )
+            ) using SizeTransform { initialSize, targetSize ->
+                if (targetState) {
+                    keyframes {
+                        // Expand horizontally first.
+                        IntSize(targetSize.width, targetSize.height) at 150
+                        durationMillis = 300
+                    }
+                } else {
+                    keyframes {
+                        // Shrink vertically first.
+                        IntSize(initialSize.width, initialSize.height) at 150
+                        durationMillis = 300
+                    }
+                }
+            }
         }, label = "") { weekMode ->
             if (weekMode) {
                 WeekCalendar(state = weekState, userScrollEnabled = true, dayContent = { day ->
