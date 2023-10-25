@@ -1,11 +1,11 @@
+@file:OptIn(ExperimentalMaterialApi::class)
+
 package kr.sjh.myschedule.ui
 
 import android.Manifest
 import android.animation.ObjectAnimator
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
-import android.util.Property
 import android.view.View
 import android.view.animation.AnticipateInterpolator
 import androidx.activity.ComponentActivity
@@ -14,7 +14,6 @@ import androidx.annotation.RequiresApi
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.core.animation.doOnEnd
-import androidx.core.splashscreen.SplashScreen
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
@@ -74,10 +73,6 @@ class MainActivity : ComponentActivity() {
                 })
             }
         }
-    }
-
-    fun startSplash() {
-
     }
 }
 

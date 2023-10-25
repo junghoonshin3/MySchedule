@@ -1,13 +1,25 @@
 package kr.sjh.myschedule.ui
 
-sealed class Screen(val route: String) {
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Today
+import androidx.compose.ui.graphics.vector.ImageVector
 
-    object Schedule : Screen(
-        route = "schedule"
+sealed class Screen(
+    val name: String, val route: String, val icon: ImageVector, val badgeCount: Int = 0
+) {
+
+    object Today : Screen(
+        name = "today", route = "today", icon = Icons.Default.Today
     )
 
-    object Detail : Screen(
-        route = "detail"
+    object Schedule : Screen(
+        name = "schedule", route = "schedule", icon = Icons.Default.Schedule
+    )
+
+    object Settings : Screen(
+        name = "settings", route = "settings", icon = Icons.Default.Settings
     )
 }
 

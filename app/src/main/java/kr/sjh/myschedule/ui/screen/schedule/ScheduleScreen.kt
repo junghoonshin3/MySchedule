@@ -49,39 +49,21 @@ fun ScheduleScreen(
     onDeleteSwipe: (ScheduleEntity) -> Unit,
     onCompleteSwipe: (ScheduleEntity) -> Unit
 ) {
-
     LaunchedEffect(key1 = Unit, block = {
         onKeepOnScreenCondition()
     })
 
-    Scaffold(modifier = Modifier.fillMaxSize(), floatingActionButton = {
-        val interactionSource = remember { MutableInteractionSource() }
-        val isPressed by interactionSource.collectIsPressedAsState()
-        val color = if (isPressed) Crayola else Color.White
-
-        FloatingActionButton(backgroundColor = DarkGray,
-            interactionSource = interactionSource,
-            onClick = {
-                onScheduleClick(null)
-            }) {
-            Icon(tint = color, imageVector = Icons.Rounded.Edit, contentDescription = "ADD")
-        }
-    }) {
-        Column(
-            modifier = Modifier
-                .background(DarkCobaltBlue)
-                .padding(it)
-        ) {
-            val yearSchedules = allYearSchedules.groupBy { it.regDt.month }
-            val scheduleList = allYearSchedules.groupBy { it.regDt }[selectedDate] ?: emptyList()
-            ScheduleTopBar(
-                yearSchedules, selectedDate, onSelectedDate
-            )
-            ScheduleContent(
-                scheduleList, onScheduleClick, onDeleteSwipe, onCompleteSwipe
-            )
-
-        }
+    Column(
+        modifier = Modifier.background(DarkCobaltBlue)
+    ) {
+        val yearSchedules = allYearSchedules.groupBy { it.regDt.month }
+        val scheduleList = allYearSchedules.groupBy { it.regDt }[selectedDate] ?: emptyList()
+        ScheduleTopBar(
+            yearSchedules, selectedDate, onSelectedDate
+        )
+        ScheduleContent(
+            scheduleList, onScheduleClick, onDeleteSwipe, onCompleteSwipe
+        )
 
     }
 }
