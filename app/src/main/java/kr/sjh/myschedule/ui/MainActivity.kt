@@ -15,6 +15,7 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.core.animation.doOnEnd
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.PermissionsRequired
@@ -32,6 +33,7 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         installSplashScreen().apply {
             setKeepOnScreenCondition {
                 return@setKeepOnScreenCondition keepOnScreenCondition
@@ -68,6 +70,7 @@ class MainActivity : ComponentActivity() {
                         permissionsState.launchMultiplePermissionRequest()
                     }
                 }
+
                 MyScheduleApp(onKeepOnScreenCondition = {
                     keepOnScreenCondition = false
                 })

@@ -1,15 +1,27 @@
 package kr.sjh.myschedule.utill
 
+import android.graphics.Rect
 import android.util.Log
+import android.view.ViewTreeObserver
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.semantics.Role
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.kizitonwose.calendar.compose.CalendarLayoutInfo
 import com.kizitonwose.calendar.compose.CalendarState
 import com.kizitonwose.calendar.compose.weekcalendar.WeekCalendarState
@@ -62,31 +74,6 @@ fun rememberFirstVisibleMonthAfterScroll(
     return visibleMonth.value
 }
 
-private val CalendarLayoutInfo.completelyVisibleMonths: List<CalendarMonth>
-    get() {
-        val visibleItemsInfo = this.visibleMonthsInfo.toMutableList()
-        return if (visibleItemsInfo.isEmpty()) {
-            emptyList()
-        } else {
-            val lastItem = visibleItemsInfo.last()
-            val viewportSize = this.viewportEndOffset + this.viewportStartOffset
-            if (lastItem.offset + lastItem.size > viewportSize) {
-                visibleItemsInfo.removeLast()
-            }
-            val firstItem = visibleItemsInfo.firstOrNull()
-            if (firstItem != null && firstItem.offset < this.viewportStartOffset) {
-                visibleItemsInfo.removeFirst()
-            }
-            visibleItemsInfo.map { it.month }
-        }
-    }
-
-internal interface MultipleEventsCutter {
-    fun processEvent(event: () -> Unit)
-
-    companion object
-}
-
 interface MultipleEventsCutterManager {
     fun processEvent(event: () -> Unit)
 }
@@ -110,8 +97,8 @@ fun <T> multipleEventsCutter(
 
     LaunchedEffect(true) {
         debounceState.debounce(300L).collect { onClick ->
-                onClick.invoke()
-            }
+            onClick.invoke()
+        }
     }
 
     return result
@@ -127,11 +114,47 @@ fun Modifier.clickableSingle(
     properties["onClick"] = onClick
 }) {
     multipleEventsCutter { manager ->
-        Modifier.clickable(enabled = enabled,
-            onClickLabel = onClickLabel,
-            onClick = { manager.processEvent { onClick() } },
-            role = role,
-            indication = LocalIndication.current,
-            interactionSource = remember { MutableInteractionSource() })
+        Modifier
+            .focusable(false)
+            .clickable(enabled = enabled,
+                onClickLabel = onClickLabel,
+                onClick = { manager.processEvent { onClick() } },
+                role = role,
+                indication = LocalIndication.current,
+                interactionSource = remember { MutableInteractionSource() })
     }
+}
+
+fun Modifier.addFocusCleaner(focusManager: FocusManager, doOnClear: () -> Unit = {}): Modifier {
+    return this.pointerInput(Unit) {
+        detectTapGestures(onTap = {
+            doOnClear()
+            focusManager.clearFocus()
+        })
+    }
+}
+@Composable
+internal fun keyboardAsState(): State<Int> {
+    val keyboardState = remember { mutableIntStateOf(0) }
+    val view = LocalView.current
+    DisposableEffect(view) {
+        val onGlobalListener = ViewTreeObserver.OnGlobalLayoutListener {
+            val rect = Rect()
+            view.getWindowVisibleDisplayFrame(rect)
+            val screenHeight = view.rootView.height
+            val keypadHeight = screenHeight - rect.bottom
+            keyboardState.intValue = if (keypadHeight > screenHeight * 0.15) {
+                keypadHeight
+            } else {
+                keypadHeight
+            }
+        }
+        view.viewTreeObserver.addOnGlobalLayoutListener(onGlobalListener)
+
+        onDispose {
+            view.viewTreeObserver.removeOnGlobalLayoutListener(onGlobalListener)
+        }
+    }
+
+    return keyboardState
 }

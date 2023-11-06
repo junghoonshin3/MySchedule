@@ -3,8 +3,11 @@ package kr.sjh.myschedule.ui.screen.today
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,12 +16,18 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
+import androidx.compose.material.Divider
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
@@ -49,7 +58,10 @@ fun TodayScreen(onKeepOnScreenCondition: () -> Unit, onAdd: () -> Unit) {
         stickyHeader {
             TodayTopBar("오늘의 스케쥴")
         }
-        todayContent((1..5).map { it.toString() }, onAdd)
+        todayContent(
+            (1..5).map { it.toString() },
+            onAdd
+        )
     }
 }
 
@@ -63,45 +75,48 @@ fun TodayTopBar(title: String) {
         contentPadding = PaddingValues(10.dp)
     ) {
         Text(text = title, color = Color.White, fontSize = 20.sp)
-        Spacer(modifier = Modifier.weight(1f))
-        Image(
-            alignment = Alignment.CenterEnd,
-            imageVector = Icons.Default.Settings,
-            contentDescription = null
-        )
+
 
     }
 }
 
 
 @Composable
-fun TodayItem(modifier: Modifier, content: String) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            color = Color.White,
-            text = content,
-            modifier = Modifier
-                .fillMaxWidth(0.75f)
-                .fillMaxHeight()
-                .padding(start = 10.dp)
-        )
+fun TodayItem(modifier: Modifier = Modifier, content: String, color: Color = Color.Transparent) {
+    Card(modifier = modifier, backgroundColor = color) {
         Row(
             modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.Center,
+            horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Image(
-                imageVector = Icons.Default.Alarm,
-                contentDescription = "",
+            Spacer(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(5.dp)
+                    .background(SoftBlue)
             )
-            Image(
-                imageVector = Icons.Default.CheckBoxOutlineBlank,
-                contentDescription = "",
+            Text(
+                color = Color.White,
+                text = content,
+                modifier = Modifier
+                    .fillMaxWidth(0.75f)
+                    .fillMaxHeight()
+                    .padding(start = 10.dp)
             )
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    imageVector = Icons.Default.Alarm,
+                    contentDescription = "",
+                )
+                Image(
+                    imageVector = Icons.Default.CheckBoxOutlineBlank,
+                    contentDescription = "",
+                )
+            }
         }
     }
 }
@@ -110,7 +125,7 @@ fun TodayItem(modifier: Modifier, content: String) {
 fun AddSchedule(
     modifier: Modifier, onAdd: () -> Unit
 ) {
-    Card(backgroundColor = Color.LightGray, modifier = modifier.clickableSingle {
+    Card(backgroundColor = Color.LightGray, modifier = modifier.clickable {
         onAdd()
     }) {
         Row(
@@ -120,7 +135,6 @@ fun AddSchedule(
             Image(imageVector = Icons.Default.Add, contentDescription = null)
             Text(text = "일정을 추가해보세요!")
         }
-
     }
 }
 
@@ -131,7 +145,7 @@ fun LazyListScope.todayContent(
         Card(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(start = 10.dp, end = 10.dp, top = 10.dp),
+                .padding(start = 15.dp, end = 15.dp, top = 15.dp),
             shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp),
             backgroundColor = Color.DarkGray
         ) {
@@ -145,10 +159,11 @@ fun LazyListScope.todayContent(
     items(list) {
         TodayItem(
             modifier = Modifier
+                .height(IntrinsicSize.Max)
                 .fillMaxWidth()
-                .defaultMinSize(minHeight = 30.dp)
-                .padding(start = 10.dp, end = 10.dp)
-                .background(Color.DarkGray), it
+                .defaultMinSize(minHeight = 50.dp)
+                .padding(start = 15.dp, end = 15.dp),
+            it,
         )
     }
 
@@ -156,7 +171,7 @@ fun LazyListScope.todayContent(
         Card(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(start = 10.dp, end = 10.dp, bottom = 10.dp),
+                .padding(start = 15.dp, end = 15.dp, bottom = 15.dp),
             shape = RoundedCornerShape(bottomStart = 10.dp, bottomEnd = 10.dp),
             backgroundColor = Color.DarkGray
         ) {
