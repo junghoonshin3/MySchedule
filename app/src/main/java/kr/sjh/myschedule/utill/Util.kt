@@ -1,35 +1,17 @@
 package kr.sjh.myschedule.utill
 
-import android.graphics.Rect
-import android.util.Log
-import android.view.ViewTreeObserver
 import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.MutatePriority
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.focus.FocusManager
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.debugInspectorInfo
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.unit.dp
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import com.kizitonwose.calendar.compose.CalendarLayoutInfo
 import com.kizitonwose.calendar.compose.CalendarState
 import com.kizitonwose.calendar.compose.weekcalendar.WeekCalendarState
 import com.kizitonwose.calendar.core.*
@@ -38,12 +20,6 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.filterNotNull
-import kr.sjh.myschedule.ui.screen.bottomsheet.ContinuousSelectionHelper.isInDateBetweenSelection
-import kr.sjh.myschedule.ui.screen.bottomsheet.ContinuousSelectionHelper.isOutDateBetweenSelection
-import kr.sjh.myschedule.ui.screen.bottomsheet.DateSelection
-import java.time.DayOfWeek
-import java.time.LocalDate
 import java.time.Month
 import java.time.YearMonth
 import java.time.format.TextStyle
@@ -141,113 +117,5 @@ fun Modifier.addFocusCleaner(focusManager: FocusManager, doOnClear: () -> Unit =
             doOnClear()
             focusManager.clearFocus()
         })
-    }
-}
-@Composable
-internal fun keyboardAsState(): State<Int> {
-    val keyboardState = remember { mutableIntStateOf(0) }
-    val view = LocalView.current
-    DisposableEffect(view) {
-        val onGlobalListener = ViewTreeObserver.OnGlobalLayoutListener {
-            val rect = Rect()
-            view.getWindowVisibleDisplayFrame(rect)
-            val screenHeight = view.rootView.height
-            val keypadHeight = screenHeight - rect.bottom
-            keyboardState.intValue = if (keypadHeight > screenHeight * 0.15) {
-                keypadHeight
-            } else {
-                keypadHeight
-            }
-        }
-        view.viewTreeObserver.addOnGlobalLayoutListener(onGlobalListener)
-
-        onDispose {
-            view.viewTreeObserver.removeOnGlobalLayoutListener(onGlobalListener)
-        }
-    }
-
-    return keyboardState
-}
-
-fun Modifier.backgroundHighlight(
-    day: CalendarDay,
-    today: LocalDate,
-    selection: DateSelection,
-    selectionColor: Color,
-    continuousSelectionColor: Color,
-    textColor: (Color) -> Unit,
-): Modifier = composed {
-    val (startDate, endDate) = selection
-    val padding = 4.dp
-    when (day.position) {
-        DayPosition.MonthDate -> {
-            when {
-                day.date.isBefore(today) -> {
-                    textColor(Color.LightGray)
-                    this
-                }
-                startDate == day.date && endDate == null -> {
-                    textColor(Color.White)
-                    padding(padding)
-                        .background(color = selectionColor, shape = CircleShape)
-                }
-                day.date == startDate -> {
-                    textColor(Color.White)
-                    padding(vertical = padding)
-                        .background(
-                            color = continuousSelectionColor,
-//                            shape = HalfSizeShape(clipStart = true),
-                        )
-                        .padding(horizontal = padding)
-                        .background(color = selectionColor, shape = CircleShape)
-                }
-                startDate != null && endDate != null && (day.date > startDate && day.date < endDate) -> {
-                    textColor(Color.LightGray)
-                    padding(vertical = padding)
-                        .background(color = continuousSelectionColor)
-                }
-                day.date == endDate -> {
-                    textColor(Color.White)
-                    padding(vertical = padding)
-                        .background(
-                            color = continuousSelectionColor,
-//                            shape = HalfSizeShape(clipStart = false),
-                        )
-                        .padding(horizontal = padding)
-                        .background(color = selectionColor, shape = CircleShape)
-                }
-                day.date == today -> {
-                    textColor(Color.LightGray)
-                    padding(padding)
-                        .border(
-                            width = 1.dp,
-                            shape = CircleShape,
-                            color = Color.Yellow,
-                        )
-                }
-                else -> {
-                    textColor(Color.LightGray)
-                    this
-                }
-            }
-        }
-        DayPosition.InDate -> {
-            textColor(Color.Transparent)
-            if (startDate != null && endDate != null &&
-                isInDateBetweenSelection(day.date, startDate, endDate)
-            ) {
-                padding(vertical = padding)
-                    .background(color = continuousSelectionColor)
-            } else this
-        }
-        DayPosition.OutDate -> {
-            textColor(Color.Transparent)
-            if (startDate != null && endDate != null &&
-                isOutDateBetweenSelection(day.date, startDate, endDate)
-            ) {
-                padding(vertical = padding)
-                    .background(color = continuousSelectionColor)
-            } else this
-        }
     }
 }

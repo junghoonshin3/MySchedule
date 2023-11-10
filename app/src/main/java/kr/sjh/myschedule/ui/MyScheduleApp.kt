@@ -2,7 +2,6 @@ package kr.sjh.myschedule.ui
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -15,7 +14,6 @@ import androidx.compose.material.Scaffold
 import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -26,6 +24,7 @@ import kr.sjh.myschedule.data.local.entity.ScheduleEntity
 import kr.sjh.myschedule.receiver.MyAlarmScheduler
 import kr.sjh.myschedule.ui.component.ModalBottomSheetDialog
 import kr.sjh.myschedule.ui.screen.bottomsheet.BottomSheetContent
+import kr.sjh.myschedule.ui.screen.bottomsheet.BottomSheetViewModel
 import kr.sjh.myschedule.ui.screen.navigation.BottomNavigationBar
 import kr.sjh.myschedule.ui.screen.schedule.ScheduleScreen
 import kr.sjh.myschedule.ui.screen.schedule.ScheduleViewModel
@@ -45,13 +44,11 @@ fun MyScheduleApp(
 ) {
     val scheduleViewModel = hiltViewModel<ScheduleViewModel>()
 
-    val sharedViewModel = hiltViewModel<SharedViewModel>()
+    val bottomSheetViewModel = hiltViewModel<BottomSheetViewModel>()
 
     val uiState by scheduleViewModel.uiState.collectAsState()
 
     val coroutineScope = rememberCoroutineScope()
-
-    val title by sharedViewModel.title.collectAsState()
 
     var bottomSheetColor by remember {
         mutableStateOf(SoftBlue)
@@ -84,7 +81,7 @@ fun MyScheduleApp(
         .addFocusCleaner(focusManager),
         sheetState = sheetState,
         sheetContent = {
-            BottomSheetContent(title, sharedViewModel::changeTitle)
+            BottomSheetContent(bottomSheetViewModel)
         }, content = {
             Scaffold(bottomBar = {
                 BottomNavigationBar(items = listOf(

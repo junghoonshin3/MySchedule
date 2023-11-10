@@ -1,12 +1,15 @@
 package kr.sjh.myschedule.ui.screen.bottomsheet
 
-import android.util.Log
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
@@ -27,6 +31,7 @@ import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -49,83 +55,39 @@ import com.kizitonwose.calendar.compose.rememberCalendarState
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.CalendarMonth
 import com.kizitonwose.calendar.core.DayPosition
-import com.kizitonwose.calendar.core.atStartOfMonth
-import com.kizitonwose.calendar.core.nextMonth
-import com.kizitonwose.calendar.core.previousMonth
-import com.kizitonwose.calendar.core.yearMonth
-import kr.sjh.myschedule.ui.screen.bottomsheet.ContinuousSelectionHelper.getSelection
+import kr.sjh.myschedule.ui.component.PeriodSpinner
 import kr.sjh.myschedule.ui.theme.FontColorNomal
+import kr.sjh.myschedule.ui.theme.PaleRobinEggBlue
 import kr.sjh.myschedule.ui.theme.SoftBlue
-import kr.sjh.myschedule.utill.backgroundHighlight
 import kr.sjh.myschedule.utill.common.MenuValue
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.Period
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.TextStyle
-import java.time.temporal.ChronoUnit
 import java.util.Locale
 
-data class DateSelection(val startDate: LocalDate? = null, val endDate: LocalDate? = null) {
-    val daysBetween by lazy(LazyThreadSafetyMode.NONE) {
-        if (startDate == null || endDate == null) null else {
-            ChronoUnit.DAYS.between(startDate, endDate)
-        }
-    }
-}
-
-object ContinuousSelectionHelper {
-    fun getSelection(
-        clickedDate: LocalDate,
-        dateSelection: DateSelection,
-    ): DateSelection {
-        val (selectionStartDate, selectionEndDate) = dateSelection
-        return if (selectionStartDate != null) {
-            if (clickedDate < selectionStartDate || selectionEndDate != null) {
-                DateSelection(startDate = clickedDate, endDate = null)
-            } else if (clickedDate != selectionStartDate) {
-                DateSelection(startDate = selectionStartDate, endDate = clickedDate)
-            } else {
-                DateSelection(startDate = clickedDate, endDate = null)
-            }
-        } else {
-            DateSelection(startDate = clickedDate, endDate = null)
-        }
-    }
-
-    fun isInDateBetweenSelection(
-        inDate: LocalDate,
-        startDate: LocalDate,
-        endDate: LocalDate,
-    ): Boolean {
-        if (startDate.yearMonth == endDate.yearMonth) return false
-        if (inDate.yearMonth == startDate.yearMonth) return true
-        val firstDateInThisMonth = inDate.yearMonth.nextMonth.atStartOfMonth()
-        return firstDateInThisMonth in startDate..endDate && startDate != firstDateInThisMonth
-    }
-
-    fun isOutDateBetweenSelection(
-        outDate: LocalDate,
-        startDate: LocalDate,
-        endDate: LocalDate,
-    ): Boolean {
-        if (startDate.yearMonth == endDate.yearMonth) return false
-        if (outDate.yearMonth == endDate.yearMonth) return true
-        val lastDateInThisMonth = outDate.yearMonth.previousMonth.atEndOfMonth()
-        return lastDateInThisMonth in startDate..endDate && endDate != lastDateInThisMonth
-    }
-}
-
 @Composable
-fun BottomSheetContent(text: String, onTextChange: (String) -> Unit) {
+fun BottomSheetContent(
+    viewModel: BottomSheetViewModel
+) {
 
     var isPriorityShow by remember {
         mutableStateOf(false)
     }
 
-    var selection by remember {
-        mutableStateOf(DateSelection())
+    val title by viewModel.title.collectAsState()
+
+    val today = LocalDate.now()
+
+    var selectedDate by remember {
+        mutableStateOf(LocalDate.now())
+    }
+
+    var isPeriodShow by remember {
+        mutableStateOf(false)
     }
 
     Column(
@@ -140,11 +102,8 @@ fun BottomSheetContent(text: String, onTextChange: (String) -> Unit) {
         ) {
             TextField(
                 modifier = Modifier.weight(0.8f),
-                value = text,
-                onValueChange = {
-                    Log.i("sjh", "${onTextChange.hashCode()}")
-                    onTextChange(it)
-                },
+                value = title,
+                onValueChange = viewModel::changeTitle,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 label = {
                     Text(
@@ -171,75 +130,44 @@ fun BottomSheetContent(text: String, onTextChange: (String) -> Unit) {
                 )
             }
         }
-        Box(modifier = Modifier.wrapContentSize()) {
-            Column(
-                modifier = Modifier.wrapContentSize()
+        Box(
+            modifier = Modifier.wrapContentSize(), contentAlignment = Alignment.BottomCenter
+        ) {
+            HorizontalCalendar(state = rememberCalendarState(
+                startMonth = YearMonth.of(1950, 1),
+                endMonth = YearMonth.of(2050, 12),
+                firstDayOfWeek = DayOfWeek.MONDAY,
+                firstVisibleMonth = YearMonth.now()
+            ), monthHeader = { month ->
+                BottomSheetCalendarHeader(month)
+            }, dayContent = { day ->
+                BottomSheetCalendarDay(day,
+                    day.date == today,
+                    day.date == selectedDate,
+                    onClickedDate = { clickDate ->
+                        if (!isPeriodShow) {
+                            selectedDate = clickDate
+                            isPeriodShow = true
+                        }
+                    },
+                    onLongClick = {
+
+                    })
+            })
+            AnimatedContent(
+                modifier = Modifier.background(
+                    color = PaleRobinEggBlue, shape = RoundedCornerShape(10.dp)
+                ),
+                targetState = isPeriodShow,
+                label = "",
             ) {
-                var selectedMenu by remember {
-                    mutableStateOf(MenuValue.Calendar)
+                if (it) {
+                    PeriodSpinner(startDateTime = selectedDate.atTime(0, 0, 0, 0), onSave = {
+                        isPeriodShow = false
+                    }, onCancel = {
+                        isPeriodShow = false
+                    })
                 }
-                LazyRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(5.dp),
-                ) {
-                    items(MenuValue.values(), key = { it.hashCode() }) { menu ->
-                        Button(onClick = {
-                            selectedMenu = menu
-                        }) {
-                            Text(text = menu.value)
-                        }
-                    }
-                }
-                AnimatedContent(contentKey = {
-                    it.hashCode()
-                }, targetState = selectedMenu, label = "") {
-                    when (it) {
-                        MenuValue.Calendar -> {
-                            HorizontalCalendar(state = rememberCalendarState(
-                                startMonth = YearMonth.of(1950, 1),
-                                endMonth = YearMonth.of(2050, 12),
-                                firstDayOfWeek = DayOfWeek.MONDAY,
-                                firstVisibleMonth = YearMonth.now()
-                            ), monthHeader = { month ->
-                                BottomSheetCalendarHeader(month)
-                            }, dayContent = { day ->
-                                BottomSheetCalendarDay(day, LocalDate.now(), selection) {
-                                    if (day.position == DayPosition.MonthDate &&
-                                        (day.date == LocalDate.now() || day.date.isAfter(
-                                            LocalDate.now()
-                                        ))
-                                    ) {
-                                        selection = getSelection(
-                                            clickedDate = day.date,
-                                            dateSelection = selection,
-                                        )
-                                    }
-                                }
-                            })
-                        }
-
-                        MenuValue.Alarm -> {
-                            WheelDateTimePicker(
-                                modifier = Modifier.fillMaxWidth(),
-                                startDateTime = LocalDateTime.now(ZoneId.of("Asia/Seoul")),
-                                timeFormat = TimeFormat.AM_PM,
-                                size = DpSize(300.dp, 150.dp),
-                                rowCount = 3,
-                                textColor = Color.Black,
-                                selectorProperties = WheelPickerDefaults.selectorProperties(
-                                    enabled = true,
-                                    shape = RoundedCornerShape(0.dp),
-                                    color = Color(0xffF7F2FA).copy(alpha = 0.2f),
-                                    border = BorderStroke(1.dp, Color.White)
-                                )
-                            ) {
-
-                            }
-                        }
-
-                    }
-                }
-
             }
         }
     }
@@ -255,6 +183,7 @@ private fun BottomSheetCalendarHeader(calendarMonth: CalendarMonth) {
         fontWeight = FontWeight.Bold,
         text = "${calendarMonth.yearMonth.year}.${calendarMonth.yearMonth.monthValue}"
     )
+    Spacer(modifier = Modifier.height(10.dp))
     Row(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -272,39 +201,61 @@ private fun BottomSheetCalendarHeader(calendarMonth: CalendarMonth) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun BottomSheetCalendarDay(
-    day: CalendarDay, today: LocalDate,
-    selection: DateSelection, onClickedDate: (LocalDate) -> Unit
+    day: CalendarDay,
+    isToday: Boolean,
+    isSelected: Boolean,
+    onClickedDate: (LocalDate) -> Unit,
+    onLongClick: () -> Unit
 ) {
-    var textColor = Color.Transparent
     Box(
-        modifier = Modifier
-            .aspectRatio(1f) // This is important for square-sizing!
-            .clickable(
-                enabled = day.position == DayPosition.MonthDate && day.date >= today,
-                onClick = { onClickedDate(day.date) },
+        Modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+            .background(
+                color = when {
+                    isToday -> {
+                        Color.Yellow.copy(0.5f)
+                    }
+
+                    isSelected -> {
+                        Color.Green.copy(0.5f)
+                    }
+
+                    else -> {
+                        Color.Unspecified
+                    }
+                }, shape = CircleShape
             )
-            .backgroundHighlight(
-                day = day,
-                today = today,
-                selection = selection,
-                selectionColor = Color.Black.copy(alpha = 0.9f),
-                continuousSelectionColor = Color.LightGray.copy(alpha = 0.3f),
-            ) { textColor = it },
+            .combinedClickable(
+                onClick = { onClickedDate(day.date) }, onLongClick = onLongClick
+            ),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text = day.date.dayOfMonth.toString(),
-            color = textColor,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Medium,
-        )
+        if (day.position == DayPosition.MonthDate) {
+            Text(
+                modifier = Modifier.align(Alignment.Center),
+                text = day.date.dayOfMonth.toString(),
+                color = Color.White,
+                fontSize = 15.sp,
+            )
+        } else {
+            Text(
+                modifier = Modifier.align(Alignment.Center),
+                text = day.date.dayOfMonth.toString(),
+                color = Color.LightGray,
+                fontSize = 15.sp,
+            )
+        }
     }
 }
+
 
 @Preview
 @Composable
 private fun BottomSheetContentPreview() {
-    BottomSheetContent("tlqkf", {})
+//    BottomSheetContent()
 }
+
