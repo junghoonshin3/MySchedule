@@ -1,26 +1,23 @@
 package kr.sjh.myschedule.ui.screen.bottomsheet
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.foundation.BorderStroke
+import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -40,33 +37,32 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.commandiron.wheel_picker_compose.WheelDateTimePicker
-import com.commandiron.wheel_picker_compose.core.TimeFormat
-import com.commandiron.wheel_picker_compose.core.WheelPickerDefaults
 import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.CalendarMonth
 import com.kizitonwose.calendar.core.DayPosition
+import kr.sjh.myschedule.components.CustomDialog
 import kr.sjh.myschedule.ui.component.PeriodSpinner
+import kr.sjh.myschedule.ui.screen.bottomsheet.add.ScheduleAddDialog
+import kr.sjh.myschedule.ui.screen.detail.showToast
 import kr.sjh.myschedule.ui.theme.FontColorNomal
-import kr.sjh.myschedule.ui.theme.PaleRobinEggBlue
 import kr.sjh.myschedule.ui.theme.SoftBlue
-import kr.sjh.myschedule.utill.common.MenuValue
+import kr.sjh.myschedule.ui.theme.VanillaIce
+import kr.sjh.myschedule.utill.backgroundWithSelection
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.Period
+import java.time.LocalTime
 import java.time.YearMonth
-import java.time.ZoneId
 import java.time.format.TextStyle
+import java.time.temporal.TemporalAccessor
 import java.util.Locale
 
 @Composable
@@ -74,13 +70,11 @@ fun BottomSheetContent(
     viewModel: BottomSheetViewModel
 ) {
 
-    var isPriorityShow by remember {
-        mutableStateOf(false)
-    }
-
     val title by viewModel.title.collectAsState()
 
     val today = LocalDate.now()
+
+    val dateSelection by viewModel.dateSelection.collectAsState()
 
     var selectedDate by remember {
         mutableStateOf(LocalDate.now())
@@ -89,6 +83,8 @@ fun BottomSheetContent(
     var isPeriodShow by remember {
         mutableStateOf(false)
     }
+
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -133,42 +129,51 @@ fun BottomSheetContent(
         Box(
             modifier = Modifier.wrapContentSize(), contentAlignment = Alignment.BottomCenter
         ) {
-            HorizontalCalendar(state = rememberCalendarState(
-                startMonth = YearMonth.of(1950, 1),
-                endMonth = YearMonth.of(2050, 12),
-                firstDayOfWeek = DayOfWeek.MONDAY,
-                firstVisibleMonth = YearMonth.now()
-            ), monthHeader = { month ->
-                BottomSheetCalendarHeader(month)
-            }, dayContent = { day ->
-                BottomSheetCalendarDay(day,
-                    day.date == today,
-                    day.date == selectedDate,
-                    onClickedDate = { clickDate ->
-                        if (!isPeriodShow) {
-                            selectedDate = clickDate
-                            isPeriodShow = true
-                        }
-                    },
-                    onLongClick = {
-
-                    })
-            })
-            AnimatedContent(
-                modifier = Modifier.background(
-                    color = PaleRobinEggBlue, shape = RoundedCornerShape(10.dp)
+            HorizontalCalendar(modifier = Modifier.wrapContentSize(),
+                userScrollEnabled = !isPeriodShow,
+                state = rememberCalendarState(
+                    startMonth = YearMonth.of(1950, 1),
+                    endMonth = YearMonth.of(2050, 12),
+                    firstDayOfWeek = DayOfWeek.MONDAY,
+                    firstVisibleMonth = YearMonth.now()
                 ),
-                targetState = isPeriodShow,
-                label = "",
-            ) {
-                if (it) {
-                    PeriodSpinner(startDateTime = selectedDate.atTime(0, 0, 0, 0), onSave = {
-                        isPeriodShow = false
-                    }, onCancel = {
-                        isPeriodShow = false
-                    })
-                }
-            }
+                monthHeader = { month ->
+                    BottomSheetCalendarHeader(month)
+                },
+                dayContent = { day ->
+                    BottomSheetCalendarDay(day,
+                        dateSelection = dateSelection,
+                        day.date == today,
+                        day.date == selectedDate,
+                        onClickedDate = { clickDate ->
+                            if (!isPeriodShow) {
+                                isPeriodShow = true
+                                selectedDate = clickDate
+                            }
+                        },
+                        onLongClick = {
+
+                        })
+                })
+
+            DateSpinnerDialog(selectedDate = selectedDate,
+                visible = isPeriodShow,
+                onDismissRequest = {
+                    isPeriodShow = false
+                },
+                onSave = { selection ->
+                    if (selection.startDate == null && selection.endDate == null) {
+                        return@DateSpinnerDialog
+                    }
+                    if (selection.startDate!! > selection.endDate) {
+                        showToast(context, "선택한 일보다 이전일 수 없습니다")
+                        return@DateSpinnerDialog
+                    }
+                    viewModel.setDateSelection(selection)
+                },
+                onCancel = {
+                    isPeriodShow = false
+                })
         }
     }
 }
@@ -205,6 +210,7 @@ private fun BottomSheetCalendarHeader(calendarMonth: CalendarMonth) {
 @Composable
 private fun BottomSheetCalendarDay(
     day: CalendarDay,
+    dateSelection: DateSelection,
     isToday: Boolean,
     isSelected: Boolean,
     onClickedDate: (LocalDate) -> Unit,
@@ -214,14 +220,15 @@ private fun BottomSheetCalendarDay(
         Modifier
             .fillMaxWidth()
             .aspectRatio(1f)
+            .border(
+                width = if (isToday) 1.dp else 0.dp,
+                color = if (isToday) Color.Yellow.copy(0.5f) else Color.Unspecified,
+                shape = if (isToday) CircleShape else RectangleShape
+            )
             .background(
                 color = when {
-                    isToday -> {
-                        Color.Yellow.copy(0.5f)
-                    }
-
                     isSelected -> {
-                        Color.Green.copy(0.5f)
+                        VanillaIce.copy(0.5f)
                     }
 
                     else -> {
@@ -252,10 +259,29 @@ private fun BottomSheetCalendarDay(
     }
 }
 
-
-@Preview
 @Composable
-private fun BottomSheetContentPreview() {
-//    BottomSheetContent()
+private fun DateSpinnerDialog(
+    selectedDate: LocalDate,
+    visible: Boolean,
+    onDismissRequest: () -> Unit,
+    onSave: (DateSelection) -> Unit,
+    onCancel: () -> Unit
+) {
+    if (visible) {
+        CustomDialog(onDismissRequest = { onDismissRequest() }) {
+            ScheduleAddDialog(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp)
+                    .background(color = SoftBlue, shape = RoundedCornerShape(10.dp)),
+                selectedDate,
+                onSave = {
+                    Log.i("sjh", "${it.startDate}, ${it.endDate}")
+                    onSave(it)
+                },
+                onCancel = {
+                    onCancel()
+                })
+        }
+    }
 }
-

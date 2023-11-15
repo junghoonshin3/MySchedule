@@ -35,11 +35,11 @@ class BottomSheetViewModel @Inject constructor(private val repository: ScheduleR
         }
     }
 
-    fun setDateSelection(startDate: LocalDateTime?, endDate: LocalDateTime?) {
+    fun setDateSelection(dateSelection: DateSelection) {
         _dateSelection.update {
-            DateSelection(startDate, endDate)
+            dateSelection
         }
     }
 }
 
-data class DateSelection(val startDate: LocalDateTime? = null, val endDate: LocalDateTime? = null)
+data class DateSelection(var startDate: LocalDateTime? = null, var endDate: LocalDateTime? = null)
