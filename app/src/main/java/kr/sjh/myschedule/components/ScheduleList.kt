@@ -107,43 +107,43 @@ fun ScheduleItem(
 fun ScheduleCard(
     schedule: ScheduleEntity, onScheduleClick: (ScheduleEntity) -> Unit
 ) {
-    ListItem(modifier = Modifier
-        .padding(bottom = 10.dp, top = 10.dp)
-        .fillMaxSize()
-        .background(Color.White)
-
-        .clickable { onScheduleClick(schedule) }, icon = {
-        Icon(
-            imageVector = if (schedule.isAlarm) {
-                Icons.Default.Timer
-            } else {
-                Icons.Default.TimerOff
-            }, contentDescription = "Icon"
-        )
-    }, text = {
-        Text(
-            overflow = TextOverflow.Ellipsis,
-            maxLines = 1,
-            fontSize = TextUnit(17f, TextUnitType.Sp),
-            text = schedule.memo
-        )
-    }, secondaryText = {
-        Text(
-            overflow = TextOverflow.Ellipsis,
-            maxLines = 1,
-            fontSize = TextUnit(15f, TextUnitType.Sp),
-            text = schedule.regDt.format(
-                DateTimeFormatter.ofPattern("yyyy년MM월dd일")
-            )
-        )
-    }, overlineText = {
-        Text(
-            overflow = TextOverflow.Ellipsis,
-            maxLines = 1,
-            fontSize = TextUnit(20f, TextUnitType.Sp),
-            text = schedule.title
-        )
-    })
+//    ListItem(modifier = Modifier
+//        .padding(bottom = 10.dp, top = 10.dp)
+//        .fillMaxSize()
+//        .background(Color.White)
+//
+//        .clickable { onScheduleClick(schedule) }, icon = {
+//        Icon(
+//            imageVector = if (schedule.isAlarm) {
+//                Icons.Default.Timer
+//            } else {
+//                Icons.Default.TimerOff
+//            }, contentDescription = "Icon"
+//        )
+//    }, text = {
+//        Text(
+//            overflow = TextOverflow.Ellipsis,
+//            maxLines = 1,
+//            fontSize = TextUnit(17f, TextUnitType.Sp),
+//            text = schedule.memo
+//        )
+//    }, secondaryText = {
+//        Text(
+//            overflow = TextOverflow.Ellipsis,
+//            maxLines = 1,
+//            fontSize = TextUnit(15f, TextUnitType.Sp),
+//            text = schedule.regDt.format(
+//                DateTimeFormatter.ofPattern("yyyy년MM월dd일")
+//            )
+//        )
+//    }, overlineText = {
+//        Text(
+//            overflow = TextOverflow.Ellipsis,
+//            maxLines = 1,
+//            fontSize = TextUnit(20f, TextUnitType.Sp),
+//            text = schedule.title
+//        )
+//    })
 }
 
 @ExperimentalMaterialApi

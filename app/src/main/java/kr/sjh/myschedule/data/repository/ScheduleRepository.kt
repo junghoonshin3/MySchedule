@@ -34,9 +34,9 @@ class ScheduleRepository constructor(
         }
     }.flowOn(Dispatchers.IO)
 
-    fun getYearSchedules(selectedDate: LocalDate) = flow {
+    fun getYearSchedules(year: Int) = flow {
         emit(Result.Loading)
-        scheduleDao.getYearSchedules(selectedDate).collect {
+        scheduleDao.getYearSchedules(year).collect {
             emit(Result.Success(it))
         }
     }.catch {
@@ -52,18 +52,18 @@ class ScheduleRepository constructor(
         }
     }.flowOn(Dispatchers.IO)
 
-    fun getSchedule(userId: Long) = flow {
-        emit(Result.Loading)
-        try {
-            if (userId == ADD_PAGE.toLong()) {
-                emit(Result.Success(ScheduleEntity()))
-            } else {
-                emit(Result.Success(scheduleDao.getSchedule(userId)))
-            }
-
-        } catch (e: Exception) {
-            error(Result.Fail(e))
-        }
-    }
+//    fun getSchedule(userId: Long) = flow {
+//        emit(Result.Loading)
+//        try {
+//            if (userId == ADD_PAGE) {
+//                emit(Result.Success(ScheduleEntity()))
+//            } else {
+//                emit(Result.Success(scheduleDao.getSchedule(userId)))
+//            }
+//
+//        } catch (e: Exception) {
+//            error(Result.Fail(e))
+//        }
+//    }
 
 }

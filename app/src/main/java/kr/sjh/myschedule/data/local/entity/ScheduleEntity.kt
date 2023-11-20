@@ -18,10 +18,14 @@ data class ScheduleEntity(
     var title: String = "",
     @ColumnInfo(name = "memo")
     var memo: String = "",
-    @ColumnInfo(name = "regDt")
-    var regDt: LocalDate = LocalDate.now(),
+    @ColumnInfo(name = "year")
+    var year: Int,
+    @ColumnInfo(name = "startDate")
+    var startDate: LocalDate,
+    @ColumnInfo(name = "endDate")
+    var endDate: LocalDate,
     @ColumnInfo(name = "alarmTime")
-    var alarmTime: LocalDateTime = LocalDateTime.now(),
+    var alarmTime: LocalDateTime,
     @ColumnInfo(name = "isAlarm")
     var isAlarm: Boolean = false,
     @ColumnInfo(name = "isComplete")
@@ -31,11 +35,13 @@ data class ScheduleEntity(
     constructor(
         title: String,
         memo: String,
-        regDt: LocalDate,
+        year: Int,
+        startDate: LocalDate,
+        endDate: LocalDate,
         alarmTime: LocalDateTime,
         isAlarm: Boolean,
         isComplete: Boolean
-    ) : this(0, title, memo, regDt, alarmTime, isAlarm, isComplete)
+    ) : this(0, title, memo, year, startDate, endDate, alarmTime, isAlarm, isComplete)
 
 //    val alarmItem: AlarmItem? = AlarmItem(alarmTime, title, memo)
 }

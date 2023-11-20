@@ -275,67 +275,66 @@ fun CalendarContent(
     isWeekMode: Boolean,
     onSelectedDate: (LocalDate) -> Unit
 ) {
-    Card(elevation = 0.dp, shape = RoundedCornerShape(bottomEnd = 10.dp, bottomStart = 10.dp)) {
-        AnimatedContent(modifier = modifier, targetState = isWeekMode, transitionSpec = {
-            fadeIn(
-                animationSpec = tween(
-                    150, 150
-                )
-            ) togetherWith fadeOut(
-                animationSpec = tween(
-                    150, 150
-                )
-            ) using SizeTransform { initialSize, targetSize ->
-                if (targetState) {
-                    keyframes {
-                        // Expand horizontally first.
-                        IntSize(targetSize.width, targetSize.height) at 150
-                        durationMillis = 300
-                    }
-                } else {
-                    keyframes {
-                        // Shrink vertically first.
-                        IntSize(initialSize.width, initialSize.height) at 150
-                        durationMillis = 300
-                    }
-                }
-            }
-        }, label = "") { weekMode ->
-            if (weekMode) {
-                WeekCalendar(state = weekState, userScrollEnabled = true, dayContent = { day ->
-                    var monthSchedule =
-                        scheduleMap[day.date.month]?.groupBy { it.regDt } ?: emptyMap()
-                    Day(
-                        modifier = Modifier.background(SoftBlue),
-                        day = day.date,
-                        isPastDay = currentDate > day.date,
-                        isSelected = selectedDate == day.date,
-                        isSchedule = monthSchedule[day.date]?.isNotEmpty() ?: false
-                    ) { clicked ->
-                        onSelectedDate(clicked)
-                    }
-                })
-            } else {
-                HorizontalCalendar(state = monthState, dayContent = { day ->
-                    var monthSchedule =
-                        scheduleMap[day.date.month]?.groupBy { it.regDt } ?: emptyMap()
-                    Day(
-                        modifier = Modifier.background(SoftBlue),
-                        day = day.date,
-                        isPastDay = currentDate > day.date,
-                        isSelected = selectedDate == day.date,
-                        inDate = day.position == DayPosition.MonthDate,
-                        isSchedule = monthSchedule[day.date]?.isNotEmpty() ?: false
-                    ) { clicked ->
-                        if (selectedDate != clicked) {
-                            onSelectedDate(day.date)
-                        }
-                    }
-                })
-            }
-        }
-    }
-
+//    Card(elevation = 0.dp, shape = RoundedCornerShape(bottomEnd = 10.dp, bottomStart = 10.dp)) {
+//        AnimatedContent(modifier = modifier, targetState = isWeekMode, transitionSpec = {
+//            fadeIn(
+//                animationSpec = tween(
+//                    150, 150
+//                )
+//            ) togetherWith fadeOut(
+//                animationSpec = tween(
+//                    150, 150
+//                )
+//            ) using SizeTransform { initialSize, targetSize ->
+//                if (targetState) {
+//                    keyframes {
+//                        // Expand horizontally first.
+//                        IntSize(targetSize.width, targetSize.height) at 150
+//                        durationMillis = 300
+//                    }
+//                } else {
+//                    keyframes {
+//                        // Shrink vertically first.
+//                        IntSize(initialSize.width, initialSize.height) at 150
+//                        durationMillis = 300
+//                    }
+//                }
+//            }
+//        }, label = "") { weekMode ->
+//            if (weekMode) {
+//                WeekCalendar(state = weekState, userScrollEnabled = true, dayContent = { day ->
+//                    var monthSchedule =
+//                        scheduleMap[day.date.month]?.groupBy { it.regDt } ?: emptyMap()
+//                    Day(
+//                        modifier = Modifier.background(SoftBlue),
+//                        day = day.date,
+//                        isPastDay = currentDate > day.date,
+//                        isSelected = selectedDate == day.date,
+//                        isSchedule = monthSchedule[day.date]?.isNotEmpty() ?: false
+//                    ) { clicked ->
+//                        onSelectedDate(clicked)
+//                    }
+//                })
+//            } else {
+//                HorizontalCalendar(state = monthState, dayContent = { day ->
+//                    var monthSchedule =
+//                        scheduleMap[day.date.month]?.groupBy { it.regDt } ?: emptyMap()
+//                    Day(
+//                        modifier = Modifier.background(SoftBlue),
+//                        day = day.date,
+//                        isPastDay = currentDate > day.date,
+//                        isSelected = selectedDate == day.date,
+//                        inDate = day.position == DayPosition.MonthDate,
+//                        isSchedule = monthSchedule[day.date]?.isNotEmpty() ?: false
+//                    ) { clicked ->
+//                        if (selectedDate != clicked) {
+//                            onSelectedDate(day.date)
+//                        }
+//                    }
+//                })
+//            }
+//        }
+//    }
 }
 
 @Composable

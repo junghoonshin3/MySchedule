@@ -1,5 +1,7 @@
 package kr.sjh.myschedule.utill
 
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,7 +31,7 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filter
-import kr.sjh.myschedule.ui.screen.bottomsheet.DateSelection
+import kr.sjh.myschedule.ui.DateSelection
 import java.time.LocalDate
 import java.time.Month
 import java.time.YearMonth
@@ -56,19 +58,6 @@ fun rememberFirstVisibleWeekAfterScroll(
         }
     }
     return visibleWeek.value
-}
-
-@Composable
-fun rememberFirstVisibleMonthAfterScroll(
-    state: CalendarState
-): CalendarMonth {
-    val visibleMonth = remember(state) { mutableStateOf(state.firstVisibleMonth) }
-    LaunchedEffect(state) {
-        snapshotFlow { state.isScrollInProgress }.filter { scrolling -> !scrolling }.collect {
-            visibleMonth.value = state.firstVisibleMonth
-        }
-    }
-    return visibleMonth.value
 }
 
 interface MultipleEventsCutterManager {
@@ -177,4 +166,19 @@ private class HalfSizeShape(private val clipStart: Boolean) : Shape {
         }
         return Outline.Rectangle(Rect(offset, Size(half, size.height)))
     }
+}
+
+fun showToast(context: Context, message: String) {
+    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+}
+
+@Composable
+fun rememberFirstVisibleMonthAfterScroll(state: CalendarState): CalendarMonth {
+    val visibleMonth = remember(state) { mutableStateOf(state.firstVisibleMonth) }
+    LaunchedEffect(state) {
+        snapshotFlow { state.isScrollInProgress }
+            .filter { scrolling -> !scrolling }
+            .collect { visibleMonth.value = state.firstVisibleMonth }
+    }
+    return visibleMonth.value
 }

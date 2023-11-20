@@ -1,6 +1,5 @@
 package kr.sjh.myschedule.ui.screen.schedule
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -36,7 +35,7 @@ class ScheduleViewModel @Inject constructor(private val repository: ScheduleRepo
     val errorState: StateFlow<ErrorUiState> = _errorState
 
     init {
-        getAllYearSchedules(LocalDate.now())
+        getAllYearSchedules(LocalDate.now().year)
     }
 
 
@@ -66,9 +65,9 @@ class ScheduleViewModel @Inject constructor(private val repository: ScheduleRepo
         }
     }
 
-    fun getAllYearSchedules(selectedDate: LocalDate) {
+    fun getAllYearSchedules(year: Int) {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.getYearSchedules(selectedDate).collectLatest { result ->
+            repository.getYearSchedules(year).collectLatest { result ->
                 when (result) {
                     is Result.Success -> {
                         _uiState.update {
