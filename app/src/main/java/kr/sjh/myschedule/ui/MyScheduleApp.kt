@@ -17,6 +17,8 @@ import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
@@ -31,17 +33,18 @@ import kr.sjh.myschedule.ui.component.ModalBottomSheetDialog
 import kr.sjh.myschedule.ui.screen.navigation.BottomNavigationBar
 import kr.sjh.myschedule.ui.screen.today.TodayScreen
 import kr.sjh.myschedule.ui.screen.today.bottomsheet.BottomSheetContent
+import kr.sjh.myschedule.ui.screen.today.generateRandomColor
 import kr.sjh.myschedule.ui.theme.SoftBlue
 import kr.sjh.myschedule.utill.MyScheduleAppState
 import kr.sjh.myschedule.utill.addFocusCleaner
 import kr.sjh.myschedule.utill.rememberMyScheduleAppState
 import java.time.LocalDate
+import java.time.YearMonth
 
-@OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalMaterialApi::class)
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun MyScheduleApp(
-    modifier: Modifier = Modifier,
     onKeepOnScreenCondition: () -> Unit,
     appState: MyScheduleAppState = rememberMyScheduleAppState(),
 ) {
@@ -56,12 +59,17 @@ fun MyScheduleApp(
         mutableStateOf(SoftBlue)
     }
 
+    var visibleYearMonth by remember {
+        mutableStateOf(YearMonth.now())
+    }
+
     var selectedDate by remember {
         mutableStateOf(LocalDate.now())
     }
 
-
     var focusManager = LocalFocusManager.current
+
+    val monthScheduleMap by mainViewModel.monthScheduleMap.collectAsState()
 
     val sheetState = rememberModalBottomSheetState(initialValue = Hidden, confirmValueChange = {
         when (it) {
@@ -89,11 +97,16 @@ fun MyScheduleApp(
         BottomSheetContent(selectedDate = selectedDate,
             title = title,
             onChangeTitle = mainViewModel::changeTitle,
-            onSave = {
+            onDateSelection = {
                 mainViewModel.setDateSelection(it)
             },
             onAlarmTime = {
                 mainViewModel.setAlarmTime(it)
+            },
+            onSave = {
+                mainViewModel.onSave(
+                    visibleYearMonth, selectedDate, color = generateRandomColor().toArgb()
+                )
             },
             onCancel = {
                 coroutineScope.launch {
@@ -124,15 +137,17 @@ fun MyScheduleApp(
                     TodayScreen(modifier = Modifier
                         .fillMaxSize()
                         .navigationBarsPadding(),
-                        onKeepOnScreenCondition,
+                        monthScheduleList = monthScheduleMap[visibleYearMonth.month.value].orEmpty(),
+                        onKeepOnScreenCondition = onKeepOnScreenCondition,
                         selectedDate = selectedDate,
                         onSelectedDate = { date ->
                             selectedDate = date
-                            bottomSheetVisible(sheetState, coroutineScope)
                         },
                         onAddSchedule = {
-                            selectedDate = LocalDate.now()
                             bottomSheetVisible(sheetState, coroutineScope)
+                        },
+                        onCalendarStateScroll = {
+                            visibleYearMonth = it
                         })
                 }
                 composable(
@@ -156,7 +171,6 @@ private fun bottomSheetVisible(sheetState: ModalBottomSheetState, coroutineScope
             sheetState.show()
         }
     }
-
 }
 
 fun addAlarm(schedule: ScheduleEntity, alarmScheduler: MyAlarmScheduler) {

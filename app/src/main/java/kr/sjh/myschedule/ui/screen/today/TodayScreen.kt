@@ -1,12 +1,12 @@
 package kr.sjh.myschedule.ui.screen.today
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,11 +16,11 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Card
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Text
@@ -31,10 +31,7 @@ import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,6 +45,8 @@ import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.DayPosition
 import com.kizitonwose.calendar.core.OutDateStyle
 import com.kizitonwose.calendar.core.daysOfWeek
+import kr.sjh.myschedule.data.local.entity.ScheduleEntity
+import kr.sjh.myschedule.ui.theme.PaleRobinEggBlue
 import kr.sjh.myschedule.ui.theme.SoftBlue
 import kr.sjh.myschedule.ui.theme.VanillaIce
 import kr.sjh.myschedule.utill.rememberFirstVisibleMonthAfterScroll
@@ -57,13 +56,17 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
+import java.util.Random
+import kotlin.random.Random.*
 
 @Composable
 fun TodayScreen(
     modifier: Modifier,
+    monthScheduleList: List<ScheduleEntity>,
+    selectedDate: LocalDate,
     onKeepOnScreenCondition: () -> Unit,
     onSelectedDate: (LocalDate) -> Unit,
-    selectedDate: LocalDate,
+    onCalendarStateScroll: (YearMonth) -> Unit,
     onAddSchedule: () -> Unit
 ) {
 
@@ -89,6 +92,10 @@ fun TodayScreen(
 
     val visibleMonth = rememberFirstVisibleMonthAfterScroll(state)
 
+    LaunchedEffect(key1 = visibleMonth, block = {
+        onCalendarStateScroll(visibleMonth.yearMonth)
+    })
+
     LazyColumn(
         modifier = modifier, verticalArrangement = Arrangement.spacedBy(5.dp)
     ) {
@@ -99,8 +106,18 @@ fun TodayScreen(
                     .fillMaxSize()
                     .padding(start = 10.dp, end = 10.dp),
                 state = state,
-                dayContent = {
-                    Day(it, selectedDate == it.date, today = LocalDate.now()) { day ->
+                dayContent = { calendarDay ->
+                    val titleOrColor = monthScheduleList.filter { entity ->
+                        entity.regDt.dayOfMonth == calendarDay.date.dayOfMonth
+                    }.map {
+                        Pair(it.title, Color(it.color))
+                    }
+                    Day(
+                        calendarDay,
+                        selectedDate == calendarDay.date,
+                        titleOrColor = titleOrColor,
+                        today = LocalDate.now()
+                    ) { day ->
                         onSelectedDate(day.date)
                     }
                 },
@@ -118,19 +135,19 @@ fun TodayScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(10.dp)
-                    .height(50.dp),
-                backgroundColor = VanillaIce,
+                    .height(70.dp),
+                backgroundColor = PaleRobinEggBlue.copy(0.5f),
                 selectedDate
             )
         }
 
 
-        items(10) {
+        items(monthScheduleList.filter { it.regDt.dayOfMonth == selectedDate.dayOfMonth }) {
             ScheduleItem(
                 modifier = Modifier
                     .defaultMinSize(minHeight = 50.dp)
                     .fillMaxWidth()
-                    .fillMaxHeight(), content = "ddd", color = SoftBlue.copy(0.5f)
+                    .fillMaxHeight(), content = it.title, color = SoftBlue.copy(0.5f)
             )
         }
         item {
@@ -170,13 +187,17 @@ fun TodayTopBar(year: Int, month: Int) {
 
 @Composable
 fun Day(
-    day: CalendarDay, isSelected: Boolean, today: LocalDate, onClick: (CalendarDay) -> Unit = {}
+    day: CalendarDay,
+    isSelected: Boolean,
+    today: LocalDate,
+    titleOrColor: List<Pair<String, Color>>,
+    onClick: (CalendarDay) -> Unit = {}
 ) {
     Box(
         modifier = Modifier
             .aspectRatio(0.7f)
             .border(
-                width = if (isSelected) 2.dp else 0.dp,
+                width = if (isSelected) 3.dp else 0.dp,
                 color = if (isSelected) VanillaIce.copy(0.5f) else Color.Transparent,
             )
             .padding(1.dp)
@@ -215,6 +236,24 @@ fun Day(
             color = textColor,
             fontSize = 12.sp,
         )
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(3.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            for (pair in titleOrColor) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .wrapContentHeight()
+                        .background(pair.second),
+                ) {
+                    Text(maxLines = 1, fontSize = 8.sp, text = pair.first, color = Color.Black)
+                }
+            }
+        }
     }
 }
 
@@ -253,11 +292,18 @@ fun SelectedDateTitle(modifier: Modifier, backgroundColor: Color, selectedDate: 
     Card(
         modifier = modifier, backgroundColor = backgroundColor
     ) {
-        Text(
-            textAlign = TextAlign.Center, text = selectedDate.format(
-                dateTimeFormatter
-            ), fontSize = 20.sp
-        )
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                color = Color.Black.copy(0.5f), text = selectedDate.format(
+                    dateTimeFormatter
+                ), fontSize = 20.sp
+            )
+        }
+
     }
 }
 
@@ -323,4 +369,12 @@ fun ScheduleAddButton(modifier: Modifier, onAddSchedule: () -> Unit) {
     }
 }
 
+fun generateRandomColor(): Color {
+    val random = Default
+    val red = random.nextInt(256)
+    val green = random.nextInt(256)
+    val blue = random.nextInt(256)
+
+    return Color(red = red, green = green, blue = blue)
+}
 

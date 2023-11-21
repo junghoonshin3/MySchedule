@@ -43,7 +43,8 @@ fun BottomSheetContent(
     selectedDate: LocalDate,
     title: String,
     onChangeTitle: (String) -> Unit,
-    onSave: (DateSelection) -> Unit,
+    onSave: () -> Unit,
+    onDateSelection: (DateSelection) -> Unit,
     onAlarmTime: (LocalTime) -> Unit,
     onCancel: () -> Unit
 ) {
@@ -61,6 +62,7 @@ fun BottomSheetContent(
                 .background(color = SoftBlue, shape = RoundedCornerShape(10.dp)),
             onSave = onSave,
             selectedDate = selectedDate,
+            onDateSelection = onDateSelection,
             onAlarmTime = onAlarmTime,
             onCancel = onCancel
         )

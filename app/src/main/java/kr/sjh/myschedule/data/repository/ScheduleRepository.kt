@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kr.sjh.myschedule.data.local.dao.ScheduleDao
 import kr.sjh.myschedule.data.local.entity.ScheduleEntity
+import kr.sjh.myschedule.ui.DateSelection
 import kr.sjh.myschedule.utill.Common.ADD_PAGE
 import java.time.LocalDate
 import javax.inject.Singleton
@@ -43,8 +44,9 @@ class ScheduleRepository constructor(
         emit(Result.Fail(it))
     }
 
-    fun insertOrUpdate(schedule: ScheduleEntity) = flow {
+    fun insertOrUpdate(schedule: ScheduleEntity, dateSelection: DateSelection?) = flow {
         try {
+            Log.i("sjh", "$schedule")
             emit(scheduleDao.insertOrUpdate(schedule))
         } catch (e: Exception) {
             e.printStackTrace()

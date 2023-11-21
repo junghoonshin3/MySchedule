@@ -57,14 +57,11 @@ import java.util.Locale
 fun ScheduleAddContent(
     modifier: Modifier,
     selectedDate: LocalDate,
-    onSave: (DateSelection) -> Unit,
+    onSave: () -> Unit,
+    onDateSelection: (DateSelection) -> Unit,
     onAlarmTime: (LocalTime) -> Unit,
     onCancel: () -> Unit
 ) {
-
-    var dateSelection by remember {
-        mutableStateOf(DateSelection())
-    }
 
     var isAlarm by remember {
         mutableStateOf(false)
@@ -77,8 +74,7 @@ fun ScheduleAddContent(
 
         item {
             DateTimeContent(selectedDate) { start, end ->
-                dateSelection.startDate = start
-                dateSelection.endDate = end
+                onDateSelection(DateSelection(start, end))
             }
         }
 
@@ -96,9 +92,9 @@ fun ScheduleAddContent(
         }
 
         item {
-            ScheduleAddButton(onSave = {
-                onSave.invoke(dateSelection)
-            }, onCancel = onCancel)
+            ScheduleAddButton(
+                onSave = onSave, onCancel = onCancel
+            )
         }
     }
 }
