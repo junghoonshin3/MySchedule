@@ -8,8 +8,8 @@ import java.time.LocalDate
 
 @Dao
 interface ScheduleDao {
-    @Query("SELECT * FROM schedules WHERE strftime('%Y', regDt) = strftime('%Y', :selectedDate) AND isComplete = 0")
-    fun getYearSchedules(selectedDate: LocalDate): Flow<List<ScheduleEntity>>
+    @Query("SELECT * FROM schedules WHERE year=:year AND isComplete = 0")
+    fun getYearSchedules(year: Int): Flow<List<ScheduleEntity>>
 
     @Query("SELECT * from schedules where id =:id")
     fun getSchedule(id: Long): ScheduleEntity

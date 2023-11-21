@@ -4,11 +4,11 @@ import android.content.Context
 import android.os.Build
 import android.util.Log
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.FastOutLinearInEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -47,6 +47,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.ImageLoader
@@ -61,11 +62,9 @@ import com.kizitonwose.calendar.compose.WeekCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
 import com.kizitonwose.calendar.compose.weekcalendar.WeekCalendarState
 import com.kizitonwose.calendar.compose.weekcalendar.rememberWeekCalendarState
-import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.DayPosition
 import com.kizitonwose.calendar.core.WeekDay
 import com.kizitonwose.calendar.core.WeekDayPosition
-import com.kizitonwose.calendar.core.atStartOfMonth
 import com.kizitonwose.calendar.core.daysOfWeek
 import com.kizitonwose.calendar.core.yearMonth
 import kotlinx.coroutines.launch
@@ -120,10 +119,39 @@ fun MyWeekCalendar(
     )
 
     val week = rememberFirstVisibleWeekAfterScroll(weekState)
+
     val month = rememberFirstVisibleMonthAfterScroll(monthState)
+
+    val onTodayCalendar by remember {
+        mutableStateOf({
+            coroutineScope.launch {
+                if (isWeekMode) {
+                    weekState.animateScrollToWeek(currentDate)
+                } else {
+                    monthState.animateScrollToMonth(currentDate.yearMonth)
+                }
+            }
+            onSelectedDate(LocalDate.now())
+        })
+    }
+
+    val onSwitchCalendarType by remember {
+        mutableStateOf({
+            isWeekMode = !isWeekMode
+        })
+    }
+
+    LaunchedEffect(key1 = isWeekMode, block = {
+        if (isWeekMode) {
+            weekState.animateScrollToWeek(selectedDate)
+        } else {
+            monthState.animateScrollToMonth(selectedDate.yearMonth)
+        }
+    })
 
     LaunchedEffect(key1 = week) {
         if (isWeekMode) {
+            Log.i("sjh", "1")
             val date = if (week.days.contains(WeekDay(currentDate, WeekDayPosition.RangeDate))) {
                 if (currentDate < week.days[selectedDate.dayOfWeek.value - 1].date) {
                     week.days[selectedDate.dayOfWeek.value - 1].date
@@ -135,11 +163,11 @@ fun MyWeekCalendar(
             }
             onSelectedDate(date)
         }
-
     }
 
     LaunchedEffect(key1 = month) {
         if (!isWeekMode) {
+            Log.i("sjh", "2")
             val date = if (month.yearMonth.isValidDay(selectedDate.dayOfMonth)) {
                 when {
                     month.yearMonth == currentDate.yearMonth && month.yearMonth.month == currentDate.month && month.yearMonth.atDay(
@@ -159,31 +187,17 @@ fun MyWeekCalendar(
         }
     }
 
-    CalendarTitle(yearMonth = selectedDate.yearMonth,
+    CalendarTitle(
+        yearMonth = selectedDate.yearMonth,
         modifier = modifier.fillMaxWidth(),
-        onSwitchCalendarType = {
-            isWeekMode = !isWeekMode
-            coroutineScope.launch {
-                if (isWeekMode) {
-                    weekState.animateScrollToWeek(selectedDate)
-                } else {
-                    monthState.animateScrollToMonth(selectedDate.yearMonth)
-                }
-            }
-        },
+        onSwitchCalendarType = onSwitchCalendarType,
         isWeekMode = isWeekMode,
-        onTodayCalendar = {
-            coroutineScope.launch {
-                if (isWeekMode) {
-                    weekState.animateScrollToWeek(currentDate)
-                } else {
-                    monthState.animateScrollToMonth(currentDate.yearMonth)
-                }
-                onSelectedDate(currentDate)
-            }
-        })
+        onTodayCalendar = onTodayCalendar
+    )
 
-    CalendarHeader(modifier, daysOfWeek(DayOfWeek.MONDAY))
+    CalendarHeader(
+        modifier, daysOfWeek(DayOfWeek.MONDAY)
+    )
 
     CalendarContent(
         modifier = modifier,
@@ -261,53 +275,66 @@ fun CalendarContent(
     isWeekMode: Boolean,
     onSelectedDate: (LocalDate) -> Unit
 ) {
-    Card(shape = RoundedCornerShape(bottomEnd = 10.dp, bottomStart = 10.dp)) {
-        AnimatedContent(modifier = modifier, targetState = isWeekMode, transitionSpec = {
-            slideInVertically(
-                initialOffsetY = { 0 },
-                animationSpec = tween(durationMillis = 150, easing = LinearOutSlowInEasing)
-            ).togetherWith(
-                slideOutVertically(
-                    targetOffsetY = { 0 },
-                    animationSpec = tween(durationMillis = 250, easing = FastOutLinearInEasing)
-                )
-            )
-        }, label = "") { weekMode ->
-            if (weekMode) {
-                WeekCalendar(state = weekState, userScrollEnabled = true, dayContent = { day ->
-                    var monthSchedule =
-                        scheduleMap[day.date.month]?.groupBy { it.regDt } ?: emptyMap()
-                    Day(
-                        modifier = Modifier.background(SoftBlue),
-                        day = day.date,
-                        isPastDay = currentDate > day.date,
-                        isSelected = selectedDate == day.date,
-                        isSchedule = monthSchedule[day.date]?.isNotEmpty() ?: false
-                    ) { clicked ->
-                        onSelectedDate(clicked)
-                    }
-                })
-            } else {
-                HorizontalCalendar(state = monthState, dayContent = { day ->
-                    var monthSchedule =
-                        scheduleMap[day.date.month]?.groupBy { it.regDt } ?: emptyMap()
-                    Day(
-                        modifier = Modifier.background(SoftBlue),
-                        day = day.date,
-                        isPastDay = currentDate > day.date,
-                        isSelected = selectedDate == day.date,
-                        inDate = day.position == DayPosition.MonthDate,
-                        isSchedule = monthSchedule[day.date]?.isNotEmpty() ?: false
-                    ) { clicked ->
-                        if (selectedDate != clicked) {
-                            onSelectedDate(day.date)
-                        }
-                    }
-                })
-            }
-        }
-    }
-
+//    Card(elevation = 0.dp, shape = RoundedCornerShape(bottomEnd = 10.dp, bottomStart = 10.dp)) {
+//        AnimatedContent(modifier = modifier, targetState = isWeekMode, transitionSpec = {
+//            fadeIn(
+//                animationSpec = tween(
+//                    150, 150
+//                )
+//            ) togetherWith fadeOut(
+//                animationSpec = tween(
+//                    150, 150
+//                )
+//            ) using SizeTransform { initialSize, targetSize ->
+//                if (targetState) {
+//                    keyframes {
+//                        // Expand horizontally first.
+//                        IntSize(targetSize.width, targetSize.height) at 150
+//                        durationMillis = 300
+//                    }
+//                } else {
+//                    keyframes {
+//                        // Shrink vertically first.
+//                        IntSize(initialSize.width, initialSize.height) at 150
+//                        durationMillis = 300
+//                    }
+//                }
+//            }
+//        }, label = "") { weekMode ->
+//            if (weekMode) {
+//                WeekCalendar(state = weekState, userScrollEnabled = true, dayContent = { day ->
+//                    var monthSchedule =
+//                        scheduleMap[day.date.month]?.groupBy { it.regDt } ?: emptyMap()
+//                    Day(
+//                        modifier = Modifier.background(SoftBlue),
+//                        day = day.date,
+//                        isPastDay = currentDate > day.date,
+//                        isSelected = selectedDate == day.date,
+//                        isSchedule = monthSchedule[day.date]?.isNotEmpty() ?: false
+//                    ) { clicked ->
+//                        onSelectedDate(clicked)
+//                    }
+//                })
+//            } else {
+//                HorizontalCalendar(state = monthState, dayContent = { day ->
+//                    var monthSchedule =
+//                        scheduleMap[day.date.month]?.groupBy { it.regDt } ?: emptyMap()
+//                    Day(
+//                        modifier = Modifier.background(SoftBlue),
+//                        day = day.date,
+//                        isPastDay = currentDate > day.date,
+//                        isSelected = selectedDate == day.date,
+//                        inDate = day.position == DayPosition.MonthDate,
+//                        isSchedule = monthSchedule[day.date]?.isNotEmpty() ?: false
+//                    ) { clicked ->
+//                        if (selectedDate != clicked) {
+//                            onSelectedDate(day.date)
+//                        }
+//                    }
+//                })
+//            }
+//        }
+//    }
 }
 
 @Composable
@@ -371,6 +398,7 @@ fun CalendarTitle(
                 .height(40.dp)
                 .padding(end = 10.dp)
                 .clickable(interactionSource = interactionSource, indication = null, onClick = {
+                    Log.i("sjh", "${onTodayCalendar.hashCode()}")
                     onTodayCalendar()
                 })
         )
@@ -382,7 +410,10 @@ fun CalendarTitle(
                 .width(40.dp)
                 .height(40.dp)
                 .padding(end = 10.dp)
-                .clickable { onSwitchCalendarType() })
+                .clickable {
+                    Log.i("sjh", "${onSwitchCalendarType.hashCode()}")
+                    onSwitchCalendarType()
+                })
     }
 }
 

@@ -23,7 +23,6 @@ fun BackPressHandler(
 
     DisposableEffect(key1 = backPressedDispatcher) {
         backPressedDispatcher?.addCallback(backCallback)
-
         onDispose {
             backCallback.remove()
         }

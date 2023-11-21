@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kr.sjh.myschedule.data.local.dao.ScheduleDao
 import kr.sjh.myschedule.data.local.entity.ScheduleEntity
+import kr.sjh.myschedule.ui.DateSelection
 import kr.sjh.myschedule.utill.Common.ADD_PAGE
 import java.time.LocalDate
 import javax.inject.Singleton
@@ -34,17 +35,18 @@ class ScheduleRepository constructor(
         }
     }.flowOn(Dispatchers.IO)
 
-    fun getYearSchedules(selectedDate: LocalDate) = flow {
+    fun getYearSchedules(year: Int) = flow {
         emit(Result.Loading)
-        scheduleDao.getYearSchedules(selectedDate).collect {
+        scheduleDao.getYearSchedules(year).collect {
             emit(Result.Success(it))
         }
     }.catch {
         emit(Result.Fail(it))
     }
 
-    fun insertOrUpdate(schedule: ScheduleEntity) = flow {
+    fun insertOrUpdate(schedule: ScheduleEntity, dateSelection: DateSelection?) = flow {
         try {
+            Log.i("sjh", "$schedule")
             emit(scheduleDao.insertOrUpdate(schedule))
         } catch (e: Exception) {
             e.printStackTrace()
@@ -52,18 +54,18 @@ class ScheduleRepository constructor(
         }
     }.flowOn(Dispatchers.IO)
 
-    fun getSchedule(userId: Long) = flow {
-        emit(Result.Loading)
-        try {
-            if (userId == ADD_PAGE.toLong()) {
-                emit(Result.Success(ScheduleEntity()))
-            } else {
-                emit(Result.Success(scheduleDao.getSchedule(userId)))
-            }
-
-        } catch (e: Exception) {
-            error(Result.Fail(e))
-        }
-    }
+//    fun getSchedule(userId: Long) = flow {
+//        emit(Result.Loading)
+//        try {
+//            if (userId == ADD_PAGE) {
+//                emit(Result.Success(ScheduleEntity()))
+//            } else {
+//                emit(Result.Success(scheduleDao.getSchedule(userId)))
+//            }
+//
+//        } catch (e: Exception) {
+//            error(Result.Fail(e))
+//        }
+//    }
 
 }

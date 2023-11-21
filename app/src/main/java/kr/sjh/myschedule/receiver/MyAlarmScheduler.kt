@@ -17,16 +17,16 @@ class MyAlarmScheduler(private val context: Context) : AlarmScheduler {
             putExtra("CONTENT", item.memo)
         }
 
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            item.alarmTime.atZone(ZoneId.systemDefault()).toEpochSecond() * 1000,
-            PendingIntent.getBroadcast(
-                context,
-                item.id.toInt(),
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-        )
+//        alarmManager.setExactAndAllowWhileIdle(
+//            AlarmManager.RTC_WAKEUP,
+//            item.alarmTime.atZone(ZoneId.systemDefault()).toEpochSecond() * 1000,
+//            PendingIntent.getBroadcast(
+//                context,
+//                item.id.toInt(),
+//                intent,
+//                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+//            )
+//        )
     }
 
     override fun cancel(item: ScheduleEntity) {
