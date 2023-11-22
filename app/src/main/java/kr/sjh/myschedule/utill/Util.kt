@@ -31,6 +31,7 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filter
+import kr.sjh.myschedule.data.local.entity.ScheduleEntity
 import kr.sjh.myschedule.ui.DateSelection
 import java.time.LocalDate
 import java.time.Month
@@ -176,10 +177,8 @@ fun showToast(context: Context, message: String) {
 fun rememberFirstVisibleMonthAfterScroll(state: CalendarState): CalendarMonth {
     val visibleMonth = remember(state) { mutableStateOf(state.firstVisibleMonth) }
     LaunchedEffect(state) {
-        snapshotFlow { state.isScrollInProgress }
-            .filter { scrolling -> !scrolling }
+        snapshotFlow { state.isScrollInProgress }.filter { scrolling -> !scrolling }
             .collect { visibleMonth.value = state.firstVisibleMonth }
     }
     return visibleMonth.value
 }
-

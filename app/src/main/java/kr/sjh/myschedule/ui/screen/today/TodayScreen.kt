@@ -31,12 +31,16 @@ import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kizitonwose.calendar.compose.HorizontalCalendar
@@ -49,6 +53,7 @@ import kr.sjh.myschedule.data.local.entity.ScheduleEntity
 import kr.sjh.myschedule.ui.theme.PaleRobinEggBlue
 import kr.sjh.myschedule.ui.theme.SoftBlue
 import kr.sjh.myschedule.ui.theme.VanillaIce
+import kr.sjh.myschedule.utill.Common.scheduleMaxCount
 import kr.sjh.myschedule.utill.rememberFirstVisibleMonthAfterScroll
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -56,18 +61,18 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
-import java.util.Random
 import kotlin.random.Random.*
 
 @Composable
 fun TodayScreen(
     modifier: Modifier,
-    monthScheduleList: List<ScheduleEntity>,
+    monthScheduleMap: Map<Int, List<ScheduleEntity>>,
     selectedDate: LocalDate,
     onKeepOnScreenCondition: () -> Unit,
     onSelectedDate: (LocalDate) -> Unit,
     onCalendarStateScroll: (YearMonth) -> Unit,
-    onAddSchedule: () -> Unit
+    onAddSchedule: () -> Unit,
+    onScheduleClick: (ScheduleEntity) -> Unit
 ) {
 
     LaunchedEffect(key1 = Unit, block = {
@@ -92,6 +97,16 @@ fun TodayScreen(
 
     val visibleMonth = rememberFirstVisibleMonthAfterScroll(state)
 
+    val monthScheduleMap by remember(monthScheduleMap) {
+        mutableStateOf(monthScheduleMap)
+    }
+
+    val dayOfMonthScheduleList by remember(selectedDate, monthScheduleMap) {
+        mutableStateOf(
+            monthScheduleMap[selectedDate.monthValue].orEmpty().groupBy { it.regDt }[selectedDate]
+        )
+    }
+
     LaunchedEffect(key1 = visibleMonth, block = {
         onCalendarStateScroll(visibleMonth.yearMonth)
     })
@@ -101,21 +116,17 @@ fun TodayScreen(
     ) {
         item {
             TodayTopBar(visibleMonth.yearMonth.year, visibleMonth.yearMonth.monthValue)
-            HorizontalCalendar(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(start = 10.dp, end = 10.dp),
+            HorizontalCalendar(modifier = Modifier
+                .fillMaxSize()
+                .padding(start = 10.dp, end = 10.dp),
                 state = state,
                 dayContent = { calendarDay ->
-                    val titleOrColor = monthScheduleList.filter { entity ->
-                        entity.regDt.dayOfMonth == calendarDay.date.dayOfMonth
-                    }.map {
-                        Pair(it.title, Color(it.color))
-                    }
+                    val dayOfMonthSchedule =
+                        monthScheduleMap[calendarDay.date.monthValue].orEmpty().groupBy { it.regDt }
                     Day(
                         calendarDay,
                         selectedDate == calendarDay.date,
-                        titleOrColor = titleOrColor,
+                        list = dayOfMonthSchedule[calendarDay.date].orEmpty(),
                         today = LocalDate.now()
                     ) { day ->
                         onSelectedDate(day.date)
@@ -126,8 +137,7 @@ fun TodayScreen(
                         modifier = Modifier.padding(vertical = 8.dp),
                         daysOfWeek = daysOfWeek,
                     )
-                },
-            )
+                })
         }
 
         item {
@@ -141,13 +151,17 @@ fun TodayScreen(
             )
         }
 
-
-        items(monthScheduleList.filter { it.regDt.dayOfMonth == selectedDate.dayOfMonth }) {
+        items(dayOfMonthScheduleList.orEmpty()) {
             ScheduleItem(
                 modifier = Modifier
                     .defaultMinSize(minHeight = 50.dp)
+                    .padding(start = 10.dp, end = 10.dp)
                     .fillMaxWidth()
-                    .fillMaxHeight(), content = it.title, color = SoftBlue.copy(0.5f)
+                    .fillMaxHeight(),
+                onClick = { onScheduleClick(it) },
+                content = it.title,
+                backgroundColor = SoftBlue.copy(0.5f),
+                color = Color(it.color).copy(0.5f)
             )
         }
         item {
@@ -190,7 +204,7 @@ fun Day(
     day: CalendarDay,
     isSelected: Boolean,
     today: LocalDate,
-    titleOrColor: List<Pair<String, Color>>,
+    list: List<ScheduleEntity>,
     onClick: (CalendarDay) -> Unit = {}
 ) {
     Box(
@@ -208,22 +222,23 @@ fun Day(
                     SoftBlue
                 }
             )
-            // Disable clicks on inDates/outDates
             .clickable(
                 enabled = day.position == DayPosition.MonthDate,
                 onClick = { onClick(day) },
             ),
     ) {
+
         val textColor = when {
-            day.date.dayOfWeek == DayOfWeek.SATURDAY && day.position != DayPosition.InDate && day.position != DayPosition.OutDate -> Color.Blue.copy(
+            day.date.dayOfWeek == DayOfWeek.SATURDAY && day.position == DayPosition.MonthDate -> Color.Blue.copy(
                 0.5f
             )
 
-            day.date.dayOfWeek == DayOfWeek.SUNDAY && day.position != DayPosition.InDate && day.position != DayPosition.OutDate -> Color.Red.copy(
+            day.date.dayOfWeek == DayOfWeek.SUNDAY && day.position == DayPosition.MonthDate -> Color.Red.copy(
                 0.5f
             )
 
             day.position == DayPosition.InDate || day.position == DayPosition.OutDate -> Color.LightGray
+
             else -> {
                 Color.Black.copy(0.5f)
             }
@@ -239,19 +254,50 @@ fun Day(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
+                .alpha(
+                    if (day.position != DayPosition.MonthDate) {
+                        0.3f
+                    } else {
+                        1f
+                    }
+                )
                 .fillMaxWidth()
-                .padding(3.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+                .padding(1.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            for (pair in titleOrColor) {
+            for (item in list.take(scheduleMaxCount)) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .wrapContentHeight()
-                        .background(pair.second),
+                        .background(
+                            color = Color(item.color)
+                        ),
                 ) {
-                    Text(maxLines = 1, fontSize = 8.sp, text = pair.first, color = Color.Black)
+                    Text(
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 1,
+                        fontSize = 8.sp,
+                        text = item.title,
+                        color = Color.Black
+                    )
                 }
+            }
+            if (list.size > scheduleMaxCount) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .wrapContentHeight()
+                        .padding(end = 1.dp),
+                    contentAlignment = Alignment.BottomEnd
+                ) {
+                    Text(
+                        color = Color.White,
+                        fontSize = 10.sp,
+                        text = "+${list.size - scheduleMaxCount}"
+                    )
+                }
+
             }
         }
     }
@@ -307,9 +353,16 @@ fun SelectedDateTitle(modifier: Modifier, backgroundColor: Color, selectedDate: 
     }
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun ScheduleItem(modifier: Modifier, content: String, color: Color = Color.Transparent) {
-    Card(modifier = modifier, backgroundColor = color) {
+fun ScheduleItem(
+    modifier: Modifier,
+    onClick: () -> Unit,
+    content: String,
+    color: Color,
+    backgroundColor: Color = Color.Transparent
+) {
+    Card(modifier = modifier, backgroundColor = backgroundColor, onClick = onClick) {
         Row(
             modifier = Modifier
                 .height(50.dp)
@@ -318,8 +371,8 @@ fun ScheduleItem(modifier: Modifier, content: String, color: Color = Color.Trans
             Spacer(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .width(2.dp)
-                    .background(Color.Black)
+                    .width(5.dp)
+                    .background(color)
             )
             Text(
                 color = Color.White,
