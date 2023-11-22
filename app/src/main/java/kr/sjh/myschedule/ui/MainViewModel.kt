@@ -32,8 +32,11 @@ class MainViewModel @Inject constructor(private val repository: ScheduleReposito
     private var _dateSelection = MutableStateFlow(DateSelection())
     val dateSelection: StateFlow<DateSelection> = _dateSelection
 
-    private var _monthScheduleMap = MutableStateFlow(emptyMap<Int, List<ScheduleEntity>>())
-    val monthScheduleMap: StateFlow<Map<Int, List<ScheduleEntity>>> = _monthScheduleMap
+    private var _yearScheduleList = MutableStateFlow(emptyList<ScheduleEntity>())
+    val yearScheduleList: StateFlow<List<ScheduleEntity>> = _yearScheduleList
+
+    private var _isAlarm = MutableStateFlow(false)
+    val isAlarm: StateFlow<Boolean> = _isAlarm
 
     init {
         getYearScheduleMap(YearMonth.now())
@@ -44,10 +47,8 @@ class MainViewModel @Inject constructor(private val repository: ScheduleReposito
             repository.getYearSchedules(yearMonth.year).collect { result ->
                 when (result) {
                     is Result.Success -> {
-                        _monthScheduleMap.update {
-                            result.data.groupBy {
-                                it.month
-                            }
+                        _yearScheduleList.update {
+                            result.data
                         }
                     }
 
@@ -65,6 +66,14 @@ class MainViewModel @Inject constructor(private val repository: ScheduleReposito
 
     fun setDateSelection(dateSelection: DateSelection) {
         _dateSelection.update { dateSelection }
+    }
+
+    fun setTitle(title: String) {
+        _title.update { title }
+    }
+
+    fun enableAlarm(isAlarm: Boolean) {
+        _isAlarm.update { isAlarm }
     }
 
     fun setAlarmTime(alarmTime: LocalTime) {

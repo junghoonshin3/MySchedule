@@ -69,7 +69,7 @@ fun MyScheduleApp(
 
     var focusManager = LocalFocusManager.current
 
-    val monthScheduleMap by mainViewModel.monthScheduleMap.collectAsState()
+    val yearScheduleList by mainViewModel.yearScheduleList.collectAsState()
 
     val sheetState = rememberModalBottomSheetState(initialValue = Hidden, confirmValueChange = {
         when (it) {
@@ -134,10 +134,11 @@ fun MyScheduleApp(
                 composable(
                     Screen.Today.route
                 ) {
+                    val monthScheduleMap = yearScheduleList.groupBy { it.month }
                     TodayScreen(modifier = Modifier
                         .fillMaxSize()
                         .navigationBarsPadding(),
-                        monthScheduleList = monthScheduleMap[visibleYearMonth.month.value].orEmpty(),
+                        monthScheduleMap = monthScheduleMap,
                         onKeepOnScreenCondition = onKeepOnScreenCondition,
                         selectedDate = selectedDate,
                         onSelectedDate = { date ->
@@ -148,7 +149,13 @@ fun MyScheduleApp(
                         },
                         onCalendarStateScroll = {
                             visibleYearMonth = it
-                        })
+                        },
+                        onScheduleClick = {
+                            mainViewModel.setTitle(it.title)
+                            mainViewModel.setAlarmTime(it.alarmTime)
+                            bottomSheetVisible(sheetState, coroutineScope)
+                        }
+                    )
                 }
                 composable(
                     Screen.Schedule.route,
