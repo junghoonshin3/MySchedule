@@ -6,8 +6,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -23,37 +27,26 @@ import javax.inject.Inject
 @HiltViewModel
 class MainViewModel @Inject constructor(private val repository: ScheduleRepository) : ViewModel() {
 
-    private var _title = MutableStateFlow("")
-    val title: StateFlow<String> = _title
-
-    private var _alarmTime = MutableStateFlow(LocalTime.now().withSecond(0))
-    val alarmTime: StateFlow<LocalTime> = _alarmTime
-
-    private var _dateSelection = MutableStateFlow(DateSelection())
-    val dateSelection: StateFlow<DateSelection> = _dateSelection
-
     private var _yearScheduleList = MutableStateFlow(emptyList<ScheduleEntity>())
     val yearScheduleList: StateFlow<List<ScheduleEntity>> = _yearScheduleList
 
-    private var _isAlarm = MutableStateFlow(false)
-    val isAlarm: StateFlow<Boolean> = _isAlarm
+    private var _schedule = MutableStateFlow<ScheduleEntity?>(null)
+    val schedule: StateFlow<ScheduleEntity?> = _schedule.asStateFlow()
 
-    init {
-        getYearScheduleMap(YearMonth.now())
+    fun setSchedule(scheduleEntity: ScheduleEntity) {
+        _schedule.value = scheduleEntity
     }
 
-    fun getYearScheduleMap(yearMonth: YearMonth) {
+    fun getYearSchedulesInRange(startYear: Int, endYear: Int) {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.getYearSchedules(yearMonth.year).collect { result ->
+            repository.getYearSchedulesInRange(startYear, endYear).collect { result ->
                 when (result) {
                     is Result.Success -> {
-                        _yearScheduleList.update {
-                            result.data
-                        }
+                        _yearScheduleList.value = result.data
                     }
 
                     is Result.Fail -> {
-                        result.throwable
+                        result.throwable.printStackTrace()
                     }
 
                     is Result.Loading -> {
@@ -63,52 +56,4 @@ class MainViewModel @Inject constructor(private val repository: ScheduleReposito
             }
         }
     }
-
-    fun setDateSelection(dateSelection: DateSelection) {
-        _dateSelection.update { dateSelection }
-    }
-
-    fun setTitle(title: String) {
-        _title.update { title }
-    }
-
-    fun enableAlarm(isAlarm: Boolean) {
-        _isAlarm.update { isAlarm }
-    }
-
-    fun setAlarmTime(alarmTime: LocalTime) {
-        _alarmTime.update { alarmTime }
-    }
-
-    fun changeTitle(title: String) {
-        _title.update {
-            title
-        }
-    }
-
-    fun onSave(
-        yearMonth: YearMonth,
-        regDt: LocalDate,
-        color: Int
-    ) {
-        viewModelScope.launch(Dispatchers.IO) {
-            repository.insertOrUpdate(
-                ScheduleEntity(
-                    title = title.value,
-                    memo = "",
-                    year = yearMonth.year,
-                    month = yearMonth.month.value,
-                    regDt = regDt,
-                    color = color,
-                    alarmTime = alarmTime.value,
-                    isAlarm = false,
-                    isComplete = false
-                ), dateSelection.value
-            ).collectLatest {
-
-            }
-        }
-    }
 }
-
-data class DateSelection(var startDate: LocalDateTime? = null, var endDate: LocalDateTime? = null)

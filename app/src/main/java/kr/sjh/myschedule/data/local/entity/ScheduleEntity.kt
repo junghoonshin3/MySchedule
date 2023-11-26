@@ -10,6 +10,7 @@ import kotlinx.parcelize.Parceler
 import kotlinx.parcelize.Parcelize
 import kotlinx.parcelize.RawValue
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 @Entity(tableName = "schedules")
@@ -20,10 +21,11 @@ data class ScheduleEntity(
     @ColumnInfo(name = "memo") var memo: String = "",
     @ColumnInfo(name = "year") var year: Int,
     @ColumnInfo(name = "month") var month: Int,
-    @ColumnInfo(name = "regDt") var regDt: LocalDate,
+    @ColumnInfo(name = "startDate") var startDate: LocalDateTime,
+    @ColumnInfo(name = "endDate") var endDate: LocalDateTime,
     @ColumnInfo(name = "color") val color: Int,
-    @ColumnInfo(name = "alarmTime") var alarmTime: LocalTime,
     @ColumnInfo(name = "isAlarm") var isAlarm: Boolean = false,
+    @ColumnInfo(name = "alarmTime") var alarmTime: LocalTime,
     @ColumnInfo(name = "isComplete") var isComplete: Boolean = false,
 ) : Parcelable {
     constructor(
@@ -31,14 +33,15 @@ data class ScheduleEntity(
         memo: String,
         year: Int,
         month: Int,
-        regDt: LocalDate,
+        startDate: LocalDateTime,
+        endDate: LocalDateTime,
         color: Int,
-        alarmTime: LocalTime,
         isAlarm: Boolean,
+        alarmTime: LocalTime,
         isComplete: Boolean
-    ) : this(0, title, memo, year, month, regDt, color, alarmTime, isAlarm, isComplete)
+    ) : this(0, title, memo, year, month, startDate, endDate, color, isAlarm, alarmTime, isComplete)
 
     override fun toString(): String {
-        return "${title},${memo},${year},${month},${regDt},${color},${alarmTime}, ${isAlarm},${isComplete}"
+        return "${title},${memo},${year},${month},${startDate},${endDate},${color},${alarmTime}, ${isAlarm},${isComplete}"
     }
 }

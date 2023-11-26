@@ -1,5 +1,6 @@
 package kr.sjh.myschedule.ui.screen.today
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -23,6 +25,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Card
 import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.ModalBottomSheetState
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
@@ -31,9 +34,11 @@ import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -43,13 +48,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kizitonwose.calendar.compose.CalendarState
 import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
 import com.kizitonwose.calendar.core.CalendarDay
+import com.kizitonwose.calendar.core.CalendarMonth
 import com.kizitonwose.calendar.core.DayPosition
 import com.kizitonwose.calendar.core.OutDateStyle
 import com.kizitonwose.calendar.core.daysOfWeek
+import kotlinx.coroutines.launch
 import kr.sjh.myschedule.data.local.entity.ScheduleEntity
+import kr.sjh.myschedule.ui.MainViewModel
 import kr.sjh.myschedule.ui.theme.PaleRobinEggBlue
 import kr.sjh.myschedule.ui.theme.SoftBlue
 import kr.sjh.myschedule.ui.theme.VanillaIce
@@ -63,21 +72,20 @@ import java.time.format.TextStyle
 import java.util.Locale
 import kotlin.random.Random.*
 
+
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun TodayScreen(
-    modifier: Modifier,
-    monthScheduleMap: Map<Int, List<ScheduleEntity>>,
-    selectedDate: LocalDate,
+    viewModel: MainViewModel,
     onKeepOnScreenCondition: () -> Unit,
+    selectedDate: LocalDate,
     onSelectedDate: (LocalDate) -> Unit,
-    onCalendarStateScroll: (YearMonth) -> Unit,
-    onAddSchedule: () -> Unit,
-    onScheduleClick: (ScheduleEntity) -> Unit
+    modalBottomSheetState: ModalBottomSheetState
 ) {
 
-    LaunchedEffect(key1 = Unit, block = {
-        onKeepOnScreenCondition()
-    })
+    val yearScheduleList by viewModel.yearScheduleList.collectAsState()
+
+    val coroutineScope = rememberCoroutineScope()
 
     val currentMonth = remember { YearMonth.now() }
 
@@ -97,6 +105,50 @@ fun TodayScreen(
 
     val visibleMonth = rememberFirstVisibleMonthAfterScroll(state)
 
+    //연도가 바뀔시 데이터 조회
+    LaunchedEffect(key1 = visibleMonth.yearMonth.year, block = {
+        val year = visibleMonth.yearMonth.year
+        viewModel.getYearSchedulesInRange(startYear = year.minus(1), endYear = year.plus(1))
+    })
+
+    TodayScreen(modifier = Modifier
+        .fillMaxSize()
+        .navigationBarsPadding(),
+        monthScheduleMap = yearScheduleList.groupBy { it.month },
+        onKeepOnScreenCondition = onKeepOnScreenCondition,
+        selectedDate = selectedDate,
+        onSelectedDate = onSelectedDate,
+        calendarState = state,
+        visibleMonth = visibleMonth,
+        daysOfWeek = daysOfWeek,
+        onAddSchedule = {
+            coroutineScope.launch {
+                modalBottomSheetState.show()
+            }
+        },
+        onScheduleClick = {
+            viewModel.setSchedule(it)
+        })
+}
+
+@Composable
+private fun TodayScreen(
+    modifier: Modifier,
+    monthScheduleMap: Map<Int, List<ScheduleEntity>>,
+    selectedDate: LocalDate,
+    onKeepOnScreenCondition: () -> Unit,
+    onSelectedDate: (LocalDate) -> Unit,
+    calendarState: CalendarState,
+    visibleMonth: CalendarMonth,
+    daysOfWeek: List<DayOfWeek>,
+    onAddSchedule: () -> Unit,
+    onScheduleClick: (ScheduleEntity) -> Unit
+) {
+
+    LaunchedEffect(key1 = Unit, block = {
+        onKeepOnScreenCondition()
+    })
+
     val monthScheduleMap by remember(monthScheduleMap) {
         mutableStateOf(monthScheduleMap)
     }
@@ -107,9 +159,6 @@ fun TodayScreen(
         )
     }
 
-    LaunchedEffect(key1 = visibleMonth, block = {
-        onCalendarStateScroll(visibleMonth.yearMonth)
-    })
 
     LazyColumn(
         modifier = modifier, verticalArrangement = Arrangement.spacedBy(5.dp)
@@ -119,7 +168,7 @@ fun TodayScreen(
             HorizontalCalendar(modifier = Modifier
                 .fillMaxSize()
                 .padding(start = 10.dp, end = 10.dp),
-                state = state,
+                state = calendarState,
                 dayContent = { calendarDay ->
                     val dayOfMonthSchedule =
                         monthScheduleMap[calendarDay.date.monthValue].orEmpty().groupBy { it.regDt }

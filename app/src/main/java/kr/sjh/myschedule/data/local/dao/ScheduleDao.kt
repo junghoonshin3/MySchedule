@@ -1,15 +1,13 @@
 package kr.sjh.myschedule.data.local.dao
 
-import android.util.Log
 import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 import kr.sjh.myschedule.data.local.entity.ScheduleEntity
-import java.time.LocalDate
 
 @Dao
 interface ScheduleDao {
-    @Query("SELECT * FROM schedules WHERE year=:year AND isComplete = 0")
-    fun getYearSchedules(year: Int): Flow<List<ScheduleEntity>>
+    @Query("SELECT * FROM schedules WHERE year BETWEEN :startYear AND :endYear ")
+    fun getYearSchedulesInRange(startYear: Int, endYear: Int): Flow<List<ScheduleEntity>>
 
     @Query("SELECT * from schedules where id =:id")
     fun getSchedule(id: Long): ScheduleEntity
@@ -31,8 +29,10 @@ interface ScheduleDao {
             updateSchedule(schedule)
             schedule.id
         }
-
     }
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertScheduleList(vararg schedule: ScheduleEntity)
 
     @Query("DELETE FROM schedules WHERE id = :id")
     fun deleteSchedule(id: Long): Int
