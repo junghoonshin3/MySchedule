@@ -1,6 +1,5 @@
 package kr.sjh.myschedule.ui.screen.today.bottomsheet.add
 
-import android.util.Log
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -30,7 +29,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,10 +41,8 @@ import com.commandiron.wheel_picker_compose.WheelDateTimePicker
 import com.commandiron.wheel_picker_compose.WheelTimePicker
 import com.commandiron.wheel_picker_compose.core.TimeFormat
 import com.commandiron.wheel_picker_compose.core.WheelPickerDefaults
-import kr.sjh.myschedule.ui.DateSelection
 import kr.sjh.myschedule.ui.theme.PaleRobinEggBlue
 import kr.sjh.myschedule.ui.theme.VanillaIce
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -56,9 +52,11 @@ import java.util.Locale
 @Composable
 fun ScheduleAddContent(
     modifier: Modifier,
-    selectedDate: LocalDate,
+    startDate: LocalDateTime,
+    endDate: LocalDateTime,
     onSave: () -> Unit,
-    onDateSelection: (DateSelection) -> Unit,
+    onDateSelection: (LocalDateTime, LocalDateTime) -> Unit,
+    onAlarm: (Boolean) -> Unit,
     onAlarmTime: (LocalTime) -> Unit,
     onCancel: () -> Unit
 ) {
@@ -73,8 +71,8 @@ fun ScheduleAddContent(
     ) {
 
         item {
-            DateTimeContent(selectedDate) { start, end ->
-                onDateSelection(DateSelection(start, end))
+            DateTimeContent(startDate, endDate) { start, end ->
+                onDateSelection(start, end)
             }
         }
 
@@ -85,6 +83,7 @@ fun ScheduleAddContent(
                 isAlarmShow = isAlarm,
                 onCheckedChange = {
                     isAlarm = it
+                    onAlarm(it)
                 },
                 onAlarmTime = {
                     onAlarmTime(it)
@@ -102,7 +101,9 @@ fun ScheduleAddContent(
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun DateTimeContent(
-    selectedDate: LocalDate, onDateSelection: (LocalDateTime, LocalDateTime) -> Unit
+    startDate: LocalDateTime,
+    endDate: LocalDateTime,
+    onDateSelection: (LocalDateTime, LocalDateTime) -> Unit
 ) {
     var isLeftSpinnerShow by remember {
         mutableStateOf(false)
@@ -111,18 +112,14 @@ fun DateTimeContent(
         mutableStateOf(false)
     }
 
-    var leftDateTime by remember(selectedDate) {
+    var leftDateTime by remember(startDate) {
         mutableStateOf(
-            LocalDateTime.of(
-                selectedDate, LocalTime.now().withSecond(0).withNano(0)
-            )
+            startDate
         )
     }
-    var rightDateTime by remember(selectedDate) {
+    var rightDateTime by remember(endDate) {
         mutableStateOf(
-            LocalDateTime.of(
-                selectedDate, LocalTime.now().withSecond(0).withNano(0).plusHours(1)
-            )
+            endDate
         )
     }
 

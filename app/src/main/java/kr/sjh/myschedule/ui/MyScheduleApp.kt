@@ -33,6 +33,7 @@ import kr.sjh.myschedule.ui.component.ModalBottomSheetDialog
 import kr.sjh.myschedule.ui.screen.navigation.BottomNavigationBar
 import kr.sjh.myschedule.ui.screen.today.TodayScreen
 import kr.sjh.myschedule.ui.screen.today.bottomsheet.BottomSheetContent
+import kr.sjh.myschedule.ui.screen.today.bottomsheet.BottomSheetViewModel
 import kr.sjh.myschedule.ui.screen.today.generateRandomColor
 import kr.sjh.myschedule.ui.theme.SoftBlue
 import kr.sjh.myschedule.utill.MyScheduleAppState
@@ -51,25 +52,13 @@ fun MyScheduleApp(
 
     val mainViewModel = hiltViewModel<MainViewModel>()
 
-    val title by mainViewModel.title.collectAsState()
-
-    val coroutineScope = rememberCoroutineScope()
-
-    var bottomSheetColor by remember {
-        mutableStateOf(SoftBlue)
-    }
-
-    var visibleYearMonth by remember {
-        mutableStateOf(YearMonth.now())
-    }
+    val bottomSheetViewModel = hiltViewModel<BottomSheetViewModel>()
 
     var selectedDate by remember {
         mutableStateOf(LocalDate.now())
     }
 
-    var focusManager = LocalFocusManager.current
-
-    val yearScheduleList by mainViewModel.yearScheduleList.collectAsState()
+    val focusManager = LocalFocusManager.current
 
     val sheetState = rememberModalBottomSheetState(initialValue = Hidden, confirmValueChange = {
         when (it) {
@@ -78,7 +67,6 @@ fun MyScheduleApp(
             }
 
             Hidden -> {
-                bottomSheetColor = SoftBlue
                 focusManager.clearFocus()
                 true
             }
@@ -94,25 +82,12 @@ fun MyScheduleApp(
         .imePadding()
         .navigationBarsPadding()
         .addFocusCleaner(focusManager), sheetState = sheetState, sheetContent = {
-        BottomSheetContent(selectedDate = selectedDate,
-            title = title,
-            onChangeTitle = mainViewModel::changeTitle,
-            onDateSelection = {
-                mainViewModel.setDateSelection(it)
-            },
-            onAlarmTime = {
-                mainViewModel.setAlarmTime(it)
-            },
-            onSave = {
-                mainViewModel.onSave(
-                    visibleYearMonth, selectedDate, color = generateRandomColor().toArgb()
-                )
-            },
-            onCancel = {
-                coroutineScope.launch {
-                    sheetState.hide()
-                }
-            })
+        BottomSheetContent(
+            selectedDate = selectedDate,
+            viewModel = bottomSheetViewModel,
+            sheetState = sheetState,
+            focusManager = focusManager
+        )
     }, content = {
         Scaffold(bottomBar = {
             BottomNavigationBar(items = listOf(
@@ -134,27 +109,14 @@ fun MyScheduleApp(
                 composable(
                     Screen.Today.route
                 ) {
-                    val monthScheduleMap = yearScheduleList.groupBy { it.month }
-                    TodayScreen(modifier = Modifier
-                        .fillMaxSize()
-                        .navigationBarsPadding(),
-                        monthScheduleMap = monthScheduleMap,
+                    TodayScreen(
+                        viewModel = mainViewModel,
                         onKeepOnScreenCondition = onKeepOnScreenCondition,
                         selectedDate = selectedDate,
-                        onSelectedDate = { date ->
-                            selectedDate = date
+                        onSelectedDate = {
+                            selectedDate = it
                         },
-                        onAddSchedule = {
-                            bottomSheetVisible(sheetState, coroutineScope)
-                        },
-                        onCalendarStateScroll = {
-                            visibleYearMonth = it
-                        },
-                        onScheduleClick = {
-                            mainViewModel.setTitle(it.title)
-                            mainViewModel.setAlarmTime(it.alarmTime)
-                            bottomSheetVisible(sheetState, coroutineScope)
-                        }
+                        modalBottomSheetState = sheetState
                     )
                 }
                 composable(
@@ -167,17 +129,6 @@ fun MyScheduleApp(
             }
         }
     })
-}
-
-@OptIn(ExperimentalMaterialApi::class)
-private fun bottomSheetVisible(sheetState: ModalBottomSheetState, coroutineScope: CoroutineScope) {
-    coroutineScope.launch {
-        if (sheetState.isVisible) {
-            sheetState.hide()
-        } else {
-            sheetState.show()
-        }
-    }
 }
 
 fun addAlarm(schedule: ScheduleEntity, alarmScheduler: MyAlarmScheduler) {
