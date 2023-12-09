@@ -46,7 +46,7 @@ fun ScheduleList(
             .background(Color.Transparent)
     ) {
         items(list, key = {
-            it.id
+            it.hashCode()
         }) {
             ScheduleItem(
                 it, onScheduleClick, onDeleteSwipe, onCompleteSwipe

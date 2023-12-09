@@ -14,7 +14,7 @@ class MyAlarmScheduler(private val context: Context) : AlarmScheduler {
     override fun schedule(item: ScheduleEntity) {
         val intent = Intent(context, AlarmReceiver::class.java).apply {
             putExtra("TITLE", item.title)
-            putExtra("CONTENT", item.memo)
+//            putExtra("CONTENT", item.memo)
         }
 
 //        alarmManager.setExactAndAllowWhileIdle(
@@ -33,7 +33,7 @@ class MyAlarmScheduler(private val context: Context) : AlarmScheduler {
         alarmManager.cancel(
             PendingIntent.getBroadcast(
                 context,
-                item.id.toInt(),
+                item.hashCode(),
                 Intent(context, AlarmReceiver::class.java),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
