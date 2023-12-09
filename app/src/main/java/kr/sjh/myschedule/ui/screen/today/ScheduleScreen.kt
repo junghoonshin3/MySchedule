@@ -1,6 +1,5 @@
 package kr.sjh.myschedule.ui.screen.today
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -17,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -25,29 +25,33 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Card
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.ModalBottomSheetState
+import androidx.compose.material.ModalBottomSheetValue.*
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
+import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kizitonwose.calendar.compose.CalendarState
 import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
@@ -55,17 +59,25 @@ import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.CalendarMonth
 import com.kizitonwose.calendar.core.DayPosition
 import com.kizitonwose.calendar.core.OutDateStyle
+import com.kizitonwose.calendar.core.atStartOfMonth
 import com.kizitonwose.calendar.core.daysOfWeek
-import kotlinx.coroutines.launch
-import kr.sjh.myschedule.data.local.entity.ScheduleEntity
-import kr.sjh.myschedule.ui.MainViewModel
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.collections.immutable.toImmutableList
+import kr.sjh.myschedule.data.local.entity.ScheduleWithTask
+import kr.sjh.myschedule.domain.model.Schedule
+import kr.sjh.myschedule.ui.component.ModalBottomSheetDialog
+import kr.sjh.myschedule.ui.screen.today.bottomsheet.BottomSheetContent
 import kr.sjh.myschedule.ui.theme.PaleRobinEggBlue
 import kr.sjh.myschedule.ui.theme.SoftBlue
 import kr.sjh.myschedule.ui.theme.VanillaIce
 import kr.sjh.myschedule.utill.Common.scheduleMaxCount
+import kr.sjh.myschedule.utill.addFocusCleaner
 import kr.sjh.myschedule.utill.rememberFirstVisibleMonthAfterScroll
+import okhttp3.internal.toImmutableMap
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
@@ -75,15 +87,11 @@ import kotlin.random.Random.*
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun TodayScreen(
-    viewModel: MainViewModel,
+fun ScheduleScreen(
+    viewModel: ScheduleViewModel = hiltViewModel(),
     onKeepOnScreenCondition: () -> Unit,
-    selectedDate: LocalDate,
-    onSelectedDate: (LocalDate) -> Unit,
-    modalBottomSheetState: ModalBottomSheetState
 ) {
-
-    val yearScheduleList by viewModel.yearScheduleList.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -105,60 +113,93 @@ fun TodayScreen(
 
     val visibleMonth = rememberFirstVisibleMonthAfterScroll(state)
 
-    //연도가 바뀔시 데이터 조회
-    LaunchedEffect(key1 = visibleMonth.yearMonth.year, block = {
-        val year = visibleMonth.yearMonth.year
-        viewModel.getYearSchedulesInRange(startYear = year.minus(1), endYear = year.plus(1))
+    val focusManager = LocalFocusManager.current
+
+    val sheetState = rememberModalBottomSheetState(initialValue = Hidden, confirmValueChange = {
+        when (it) {
+            Expanded -> {
+                true
+            }
+
+            Hidden -> {
+                viewModel.bottomSheetDialog = false
+                true
+            }
+
+            HalfExpanded -> {
+                false
+            }
+        }
+    }, skipHalfExpanded = true)
+
+    LaunchedEffect(key1 = viewModel.bottomSheetDialog, block = {
+        if (viewModel.bottomSheetDialog) {
+            sheetState.show()
+        } else {
+            sheetState.hide()
+        }
     })
 
-    TodayScreen(modifier = Modifier
+    //연도가 바뀔시 데이터 조회
+    LaunchedEffect(key1 = visibleMonth.yearMonth.year, block = {
+    })
+
+    ModalBottomSheetDialog(modifier = Modifier
         .fillMaxSize()
-        .navigationBarsPadding(),
-        monthScheduleMap = yearScheduleList.groupBy { it.month },
-        onKeepOnScreenCondition = onKeepOnScreenCondition,
-        selectedDate = selectedDate,
-        onSelectedDate = onSelectedDate,
-        calendarState = state,
-        visibleMonth = visibleMonth,
-        daysOfWeek = daysOfWeek,
-        onAddSchedule = {
-            coroutineScope.launch {
-                modalBottomSheetState.show()
-            }
-        },
-        onScheduleClick = {
-            viewModel.setSchedule(it)
-        })
+        .imePadding()
+        .navigationBarsPadding()
+        .addFocusCleaner(focusManager), sheetState = sheetState, sheetContent = {
+        BottomSheetContent(title = uiState.bottomSheetUiState.title,
+            startDateTime = LocalDateTime.of(
+                uiState.bottomSheetUiState.startDate,
+                uiState.bottomSheetUiState.startTime
+            ),
+            endDateTime = LocalDateTime.of(
+                uiState.bottomSheetUiState.endDate,
+                uiState.bottomSheetUiState.endTime
+            ),
+            onTitleChange = viewModel::onTitleChange,
+            onSave = viewModel::onSave,
+            onDateRange = viewModel::onDateRange,
+            onAlarmTime = viewModel::onAlarmTime,
+            onAlarm = viewModel::onAlarm,
+            onCancel = { /*TODO*/ },
+            onDone = {})
+    }, content = {
+        ScheduleScreen(
+            modifier = Modifier.fillMaxSize(),
+            yearScheduleMap = uiState.yearScheduleMap,
+            calendarState = state,
+            visibleMonth = visibleMonth,
+            daysOfWeek = daysOfWeek,
+            selectedDate = uiState.selectedDate,
+            onKeepOnScreenCondition = onKeepOnScreenCondition,
+            onAddSchedule = viewModel::onAddSchedule,
+            onScheduleClick = viewModel::setSelectedSchedule,
+            onSelectedDate = viewModel::setSelectedDate
+        )
+    })
+
+
 }
 
 @Composable
-private fun TodayScreen(
+private fun ScheduleScreen(
     modifier: Modifier,
-    monthScheduleMap: Map<Int, List<ScheduleEntity>>,
-    selectedDate: LocalDate,
-    onKeepOnScreenCondition: () -> Unit,
-    onSelectedDate: (LocalDate) -> Unit,
+    yearScheduleMap: ImmutableMap<LocalDate, List<ScheduleWithTask>>,
     calendarState: CalendarState,
     visibleMonth: CalendarMonth,
     daysOfWeek: List<DayOfWeek>,
+    selectedDate: LocalDate,
+    onKeepOnScreenCondition: () -> Unit,
     onAddSchedule: () -> Unit,
-    onScheduleClick: (ScheduleEntity) -> Unit
+    onScheduleClick: (ScheduleWithTask) -> Unit,
+    onSelectedDate: (LocalDate) -> Unit
 ) {
 
     LaunchedEffect(key1 = Unit, block = {
         onKeepOnScreenCondition()
     })
-
-    val monthScheduleMap by remember(monthScheduleMap) {
-        mutableStateOf(monthScheduleMap)
-    }
-
-    val dayOfMonthScheduleList by remember(selectedDate, monthScheduleMap) {
-        mutableStateOf(
-            monthScheduleMap[selectedDate.monthValue].orEmpty().groupBy { it.regDt }[selectedDate]
-        )
-    }
-
 
     LazyColumn(
         modifier = modifier, verticalArrangement = Arrangement.spacedBy(5.dp)
@@ -170,12 +211,10 @@ private fun TodayScreen(
                 .padding(start = 10.dp, end = 10.dp),
                 state = calendarState,
                 dayContent = { calendarDay ->
-                    val dayOfMonthSchedule =
-                        monthScheduleMap[calendarDay.date.monthValue].orEmpty().groupBy { it.regDt }
                     Day(
                         calendarDay,
                         selectedDate == calendarDay.date,
-                        list = dayOfMonthSchedule[calendarDay.date].orEmpty(),
+                        list = yearScheduleMap[calendarDay.date].orEmpty(),
                         today = LocalDate.now()
                     ) { day ->
                         onSelectedDate(day.date)
@@ -200,7 +239,7 @@ private fun TodayScreen(
             )
         }
 
-        items(dayOfMonthScheduleList.orEmpty()) {
+        items(yearScheduleMap[selectedDate].orEmpty()) {
             ScheduleItem(
                 modifier = Modifier
                     .defaultMinSize(minHeight = 50.dp)
@@ -208,9 +247,9 @@ private fun TodayScreen(
                     .fillMaxWidth()
                     .fillMaxHeight(),
                 onClick = { onScheduleClick(it) },
-                content = it.title,
+                content = it.schedule.title,
                 backgroundColor = SoftBlue.copy(0.5f),
-                color = Color(it.color).copy(0.5f)
+                color = Color.Red.copy(0.5f)
             )
         }
         item {
@@ -253,7 +292,7 @@ fun Day(
     day: CalendarDay,
     isSelected: Boolean,
     today: LocalDate,
-    list: List<ScheduleEntity>,
+    list: List<ScheduleWithTask>,
     onClick: (CalendarDay) -> Unit = {}
 ) {
     Box(
@@ -320,14 +359,14 @@ fun Day(
                         .fillMaxWidth()
                         .wrapContentHeight()
                         .background(
-                            color = Color(item.color)
+                            color = Color.Red
                         ),
                 ) {
                     Text(
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 1,
                         fontSize = 8.sp,
-                        text = item.title,
+                        text = item.schedule.title,
                         color = Color.Black
                     )
                 }

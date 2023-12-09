@@ -55,7 +55,7 @@ fun ScheduleAddContent(
     startDate: LocalDateTime,
     endDate: LocalDateTime,
     onSave: () -> Unit,
-    onDateSelection: (LocalDateTime, LocalDateTime) -> Unit,
+    onDateRange: (LocalDateTime, LocalDateTime) -> Unit,
     onAlarm: (Boolean) -> Unit,
     onAlarmTime: (LocalTime) -> Unit,
     onCancel: () -> Unit
@@ -71,24 +71,22 @@ fun ScheduleAddContent(
     ) {
 
         item {
-            DateTimeContent(startDate, endDate) { start, end ->
-                onDateSelection(start, end)
-            }
+            DateTimeContent(startDate, endDate, onDateRange)
         }
 
-        item {
-            AlarmContent(modifier = Modifier
-                .fillMaxWidth()
-                .padding(end = 10.dp, start = 10.dp),
-                isAlarmShow = isAlarm,
-                onCheckedChange = {
-                    isAlarm = it
-                    onAlarm(it)
-                },
-                onAlarmTime = {
-                    onAlarmTime(it)
-                })
-        }
+//        item {
+//            AlarmContent(modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(end = 10.dp, start = 10.dp),
+//                isAlarmShow = isAlarm,
+//                onCheckedChange = {
+//                    isAlarm = it
+//                    onAlarm(it)
+//                },
+//                onAlarmTime = {
+//                    onAlarmTime(it)
+//                })
+//        }
 
         item {
             ScheduleAddButton(
@@ -103,7 +101,7 @@ fun ScheduleAddContent(
 fun DateTimeContent(
     startDate: LocalDateTime,
     endDate: LocalDateTime,
-    onDateSelection: (LocalDateTime, LocalDateTime) -> Unit
+    onDateRange: (LocalDateTime, LocalDateTime) -> Unit,
 ) {
     var isLeftSpinnerShow by remember {
         mutableStateOf(false)
@@ -128,7 +126,7 @@ fun DateTimeContent(
     val timeFormat = DateTimeFormatter.ofPattern("HH:mm a")
 
     LaunchedEffect(key1 = leftDateTime, key2 = rightDateTime, block = {
-        onDateSelection(leftDateTime, rightDateTime)
+        onDateRange(leftDateTime,rightDateTime)
     })
 
     Column {

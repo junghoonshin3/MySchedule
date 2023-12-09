@@ -9,11 +9,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 sealed class Screen(
     val name: String, val route: String, val icon: ImageVector, val badgeCount: Int = 0
 ) {
-
-    object Today : Screen(
-        name = "today", route = "today", icon = Icons.Default.Today
-    )
-
     object Schedule : Screen(
         name = "schedule", route = "schedule", icon = Icons.Default.Schedule
     )
