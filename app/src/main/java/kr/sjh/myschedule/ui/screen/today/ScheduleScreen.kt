@@ -1,5 +1,6 @@
 package kr.sjh.myschedule.ui.screen.today
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -36,10 +37,8 @@ import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -50,6 +49,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.toColor
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kizitonwose.calendar.compose.CalendarState
@@ -59,13 +59,9 @@ import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.CalendarMonth
 import com.kizitonwose.calendar.core.DayPosition
 import com.kizitonwose.calendar.core.OutDateStyle
-import com.kizitonwose.calendar.core.atStartOfMonth
 import com.kizitonwose.calendar.core.daysOfWeek
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
-import kotlinx.collections.immutable.toImmutableList
 import kr.sjh.myschedule.data.local.entity.ScheduleWithTask
-import kr.sjh.myschedule.domain.model.Schedule
 import kr.sjh.myschedule.ui.component.ModalBottomSheetDialog
 import kr.sjh.myschedule.ui.screen.today.bottomsheet.BottomSheetContent
 import kr.sjh.myschedule.ui.theme.PaleRobinEggBlue
@@ -74,7 +70,6 @@ import kr.sjh.myschedule.ui.theme.VanillaIce
 import kr.sjh.myschedule.utill.Common.scheduleMaxCount
 import kr.sjh.myschedule.utill.addFocusCleaner
 import kr.sjh.myschedule.utill.rememberFirstVisibleMonthAfterScroll
-import okhttp3.internal.toImmutableMap
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -142,6 +137,10 @@ fun ScheduleScreen(
 
     //연도가 바뀔시 데이터 조회
     LaunchedEffect(key1 = visibleMonth.yearMonth.year, block = {
+        Log.i("sjh", "${visibleMonth.yearMonth.year}")
+        val startDate = LocalDate.of(visibleMonth.yearMonth.year.minus(1), 1, 1)
+        val endDate = LocalDate.of(visibleMonth.yearMonth.year.plus(1), 12, 31)
+        viewModel.getScheduleWithTasks(startDate, endDate)
     })
 
     ModalBottomSheetDialog(modifier = Modifier
@@ -151,18 +150,16 @@ fun ScheduleScreen(
         .addFocusCleaner(focusManager), sheetState = sheetState, sheetContent = {
         BottomSheetContent(title = uiState.bottomSheetUiState.title,
             startDateTime = LocalDateTime.of(
-                uiState.bottomSheetUiState.startDate,
-                uiState.bottomSheetUiState.startTime
+                uiState.bottomSheetUiState.startDate, uiState.bottomSheetUiState.startTime
             ),
             endDateTime = LocalDateTime.of(
-                uiState.bottomSheetUiState.endDate,
-                uiState.bottomSheetUiState.endTime
+                uiState.bottomSheetUiState.endDate, uiState.bottomSheetUiState.endTime
             ),
             onTitleChange = viewModel::onTitleChange,
             onSave = viewModel::onSave,
             onDateRange = viewModel::onDateRange,
-            onAlarmTime = viewModel::onAlarmTime,
-            onAlarm = viewModel::onAlarm,
+            onAlarmTime = { },
+            onAlarm = { },
             onCancel = { /*TODO*/ },
             onDone = {})
     }, content = {
@@ -211,6 +208,7 @@ private fun ScheduleScreen(
                 .padding(start = 10.dp, end = 10.dp),
                 state = calendarState,
                 dayContent = { calendarDay ->
+                    Log.i("sjh", "${yearScheduleMap[calendarDay.date]?.size}")
                     Day(
                         calendarDay,
                         selectedDate == calendarDay.date,
@@ -249,7 +247,7 @@ private fun ScheduleScreen(
                 onClick = { onScheduleClick(it) },
                 content = it.schedule.title,
                 backgroundColor = SoftBlue.copy(0.5f),
-                color = Color.Red.copy(0.5f)
+                color = Color(it.schedule.color)
             )
         }
         item {
@@ -359,7 +357,7 @@ fun Day(
                         .fillMaxWidth()
                         .wrapContentHeight()
                         .background(
-                            color = Color.Red
+                            color = Color(item.schedule.color)
                         ),
                 ) {
                     Text(

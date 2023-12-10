@@ -22,21 +22,6 @@ class ScheduleRepository constructor(
     private val scheduleWithTaskDao: ScheduleWithTaskDao
 ) : Repository {
 
-
-    override fun getSchedulesInRange(
-        startDate: LocalDate, endDate: LocalDate
-    ) = flow {
-        emit(Result.Loading)
-//        scheduleDao.getSchedulesInRange(startDate, endDate).map {
-//            it.asDomain()
-//        }.collect {
-//            emit(Result.Success(it))
-//        }
-    }.catch {
-        it.printStackTrace()
-        error(it)
-    }.flowOn(Dispatchers.IO)
-
     override fun insertSchedule(schedule: Schedule) {
 
     }
@@ -45,9 +30,17 @@ class ScheduleRepository constructor(
         scheduleWithTaskDao.insertScheduleWithTasks(schedule.toEntity(), tasks.toEntityList())
     }
 
-    override fun getScheduleWithTasks() = flow {
+    override fun updateScheduleWithTasks(schedule: Schedule, tasks: List<Task>) {
+        scheduleWithTaskDao.updateScheduleWithTasks(
+            schedule.toEntity(),
+            tasks.toEntityList()
+        )
+    }
+
+
+    override fun getScheduleWithTasks(startDate: LocalDate, endDate: LocalDate) = flow {
         emit(Result.Loading)
-        scheduleWithTaskDao.getScheduleWithTasks().collect {
+        scheduleWithTaskDao.getScheduleWithTasks(startDate, endDate).collect {
             emit(Result.Success(it))
         }
     }.catch {

@@ -15,17 +15,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import kr.sjh.myschedule.domain.model.Schedule
 import kr.sjh.myschedule.ui.screen.today.bottomsheet.add.ScheduleAddContent
-import kr.sjh.myschedule.ui.screen.today.generateRandomColor
 import kr.sjh.myschedule.ui.theme.FontColorNomal
 import kr.sjh.myschedule.ui.theme.SoftBlue
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 

@@ -1,9 +1,10 @@
 package kr.sjh.myschedule.ui.screen.today
 
-import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,21 +17,20 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kr.sjh.myschedule.data.local.entity.ScheduleWithTask
-import kr.sjh.myschedule.data.repository.Result
 import kr.sjh.myschedule.data.repository.Result.Fail
 import kr.sjh.myschedule.data.repository.Result.Loading
 import kr.sjh.myschedule.data.repository.Result.Success
 import kr.sjh.myschedule.data.repository.ScheduleRepository
 import kr.sjh.myschedule.domain.model.Schedule
 import kr.sjh.myschedule.domain.model.Task
+import kr.sjh.myschedule.utill.common.BottomSheetMode
+import kr.sjh.myschedule.utill.common.BottomSheetMode.EDIT
+import kr.sjh.myschedule.utill.common.BottomSheetMode.NEW_ADD
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.time.Period
 import javax.inject.Inject
-import kotlin.math.abs
 
 data class MainUiState(
     val yearScheduleMap: ImmutableMap<LocalDate, List<ScheduleWithTask>> = persistentMapOf(),
@@ -39,12 +39,14 @@ data class MainUiState(
 )
 
 data class BottomSheetUiState(
+    val mode: BottomSheetMode = NEW_ADD,
     val id: Long? = null,
     val title: String = "",
     val startDate: LocalDate = LocalDate.now(),
     val endDate: LocalDate = LocalDate.now(),
     val startTime: LocalTime = LocalTime.now(),
-    val endTime: LocalTime = LocalTime.now().plusHours(1)
+    val endTime: LocalTime = LocalTime.now().plusHours(1),
+    val color: Int = generateRandomColor().toArgb()
 )
 
 @HiltViewModel
@@ -56,13 +58,9 @@ class ScheduleViewModel @Inject constructor(private val repository: ScheduleRepo
 
     var bottomSheetDialog by mutableStateOf(false)
 
-    init {
-        getScheduleWithTasks()
-    }
-
-    fun getScheduleWithTasks() {
+    fun getScheduleWithTasks(startDate: LocalDate, endDate: LocalDate) {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.getScheduleWithTasks().collect { result ->
+            repository.getScheduleWithTasks(startDate, endDate).collectLatest { result ->
                 when (result) {
                     is Success -> {
                         _uiState.update {
@@ -84,14 +82,17 @@ class ScheduleViewModel @Inject constructor(private val repository: ScheduleRepo
         }
     }
 
-    fun setSelectedSchedule(schedule: ScheduleWithTask) {
+    fun setSelectedSchedule(scheduleWithTask: ScheduleWithTask) {
         _uiState.update {
             it.copy(
                 bottomSheetUiState = it.bottomSheetUiState.copy(
-                    id = schedule.schedule.id,
-                    title = schedule.schedule.title,
-//                    startDateTime = schedule.selectedDates.first(),
-//                    endDateTime = schedule.selectedDates.last()
+                    id = scheduleWithTask.schedule.id,
+                    mode = BottomSheetMode.EDIT,
+                    title = scheduleWithTask.schedule.title,
+                    startDate = scheduleWithTask.schedule.startDate,
+                    endDate = scheduleWithTask.schedule.endDate,
+                    startTime = scheduleWithTask.schedule.startTime,
+                    endTime = scheduleWithTask.schedule.endTime
                 )
             )
         }
@@ -99,17 +100,23 @@ class ScheduleViewModel @Inject constructor(private val repository: ScheduleRepo
     }
 
     fun onAddSchedule() {
+        _uiState.update {
+            it.copy(
+                bottomSheetUiState = it.bottomSheetUiState.copy(
+                    id = null,
+                    mode = NEW_ADD,
+                    startDate = it.selectedDate,
+                    endDate = it.selectedDate
+                )
+            )
+        }
         bottomSheetDialog = true
     }
 
     fun setSelectedDate(date: LocalDate) {
         _uiState.update {
             it.copy(
-                selectedDate = date, bottomSheetUiState = it.bottomSheetUiState.copy(
-                    startDate = date, endDate = date
-//                    startDate = LocalDateTime.of(date, LocalTime.now()),
-//                    endDate = LocalDateTime.of(date, LocalTime.now()).plusHours(1)
-                )
+                selectedDate = date
             )
         }
     }
@@ -137,53 +144,51 @@ class ScheduleViewModel @Inject constructor(private val repository: ScheduleRepo
         }
     }
 
-    fun onAlarmTime(time: LocalTime) {
-        _uiState.update {
-            it.copy(
-//                selectedSchedule = it.selectedSchedule?.copy(
-//                    alarmTime = time
-//                )
-            )
-        }
-    }
-
-    fun onAlarm(isAlarm: Boolean) {
-        _uiState.update {
-            it.copy(
-//                selectedSchedule = it.selectedSchedule?.copy(
-//                    isAlarm = isAlarm
-//                )
-            )
-        }
-    }
 
     fun onSave() {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.insertScheduleWithTasks(
-                schedule = Schedule(
-                    title = uiState.value.bottomSheetUiState.title,
-                ), tasks = getDaysBetween(
-                    startDate = uiState.value.bottomSheetUiState.startDate,
-                    endDate = uiState.value.bottomSheetUiState.endDate
-                )
-            )
+            when (uiState.value.bottomSheetUiState.mode) {
+                EDIT -> {
+                    repository.updateScheduleWithTasks(
+                        schedule = Schedule(
+                            id = uiState.value.bottomSheetUiState.id,
+                            title = uiState.value.bottomSheetUiState.title,
+                            startDate = uiState.value.bottomSheetUiState.startDate,
+                            endDate = uiState.value.bottomSheetUiState.endDate,
+                            startTime = uiState.value.bottomSheetUiState.startTime,
+                            endTime = uiState.value.bottomSheetUiState.endTime,
+                            color = uiState.value.bottomSheetUiState.color
+                        ), tasks = getDaysBetween(
+                            startDate = uiState.value.bottomSheetUiState.startDate,
+                            endDate = uiState.value.bottomSheetUiState.endDate
+                        )
+                    )
+                }
+
+                NEW_ADD -> {
+                    repository.updateScheduleWithTasks(
+                        schedule = Schedule(
+                            title = uiState.value.bottomSheetUiState.title,
+                            startDate = uiState.value.bottomSheetUiState.startDate,
+                            endDate = uiState.value.bottomSheetUiState.endDate,
+                            startTime = uiState.value.bottomSheetUiState.startTime,
+                            endTime = uiState.value.bottomSheetUiState.endTime,
+                            color = uiState.value.bottomSheetUiState.color,
+                        ), tasks = getDaysBetween(
+                            startDate = uiState.value.bottomSheetUiState.startDate,
+                            endDate = uiState.value.bottomSheetUiState.endDate
+                        )
+                    )
+                }
+            }
             bottomSheetDialog = false
         }
     }
-
-//    fun clearSelectedSchedule() {
-//        _uiState.update {
-//            it.copy(
-//                selectedSchedule = null
-//            )
-//        }
-//    }
 
     private fun getDaysBetween(
         startDate: LocalDate, endDate: LocalDate
     ): List<Task> {
         val tasks = mutableListOf<Task>()
-
         var currentDate = startDate
         while (!currentDate.isAfter(endDate)) {
             tasks.add(Task(regDt = currentDate))
