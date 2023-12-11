@@ -10,11 +10,11 @@ import java.time.LocalDate
 
 @Dao
 interface ScheduleDao {
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertSchedule(schedule: ScheduleEntity): Long
 
     @Update
-    fun updateSchedule(schedule: ScheduleEntity)
+    fun updateSchedule(vararg schedule: ScheduleEntity)
 
     @Delete
     fun deleteSchedule(schedule: ScheduleEntity)

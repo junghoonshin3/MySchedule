@@ -151,7 +151,6 @@ fun MyWeekCalendar(
 
     LaunchedEffect(key1 = week) {
         if (isWeekMode) {
-            Log.i("sjh", "1")
             val date = if (week.days.contains(WeekDay(currentDate, WeekDayPosition.RangeDate))) {
                 if (currentDate < week.days[selectedDate.dayOfWeek.value - 1].date) {
                     week.days[selectedDate.dayOfWeek.value - 1].date
@@ -167,7 +166,6 @@ fun MyWeekCalendar(
 
     LaunchedEffect(key1 = month) {
         if (!isWeekMode) {
-            Log.i("sjh", "2")
             val date = if (month.yearMonth.isValidDay(selectedDate.dayOfMonth)) {
                 when {
                     month.yearMonth == currentDate.yearMonth && month.yearMonth.month == currentDate.month && month.yearMonth.atDay(
@@ -398,7 +396,6 @@ fun CalendarTitle(
                 .height(40.dp)
                 .padding(end = 10.dp)
                 .clickable(interactionSource = interactionSource, indication = null, onClick = {
-                    Log.i("sjh", "${onTodayCalendar.hashCode()}")
                     onTodayCalendar()
                 })
         )
@@ -411,7 +408,6 @@ fun CalendarTitle(
                 .height(40.dp)
                 .padding(end = 10.dp)
                 .clickable {
-                    Log.i("sjh", "${onSwitchCalendarType.hashCode()}")
                     onSwitchCalendarType()
                 })
     }

@@ -1,4 +1,4 @@
-package kr.sjh.myschedule.ui.screen.today
+package kr.sjh.myschedule.ui.screen.schedule
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -36,10 +36,7 @@ import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -59,41 +56,32 @@ import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.CalendarMonth
 import com.kizitonwose.calendar.core.DayPosition
 import com.kizitonwose.calendar.core.OutDateStyle
-import com.kizitonwose.calendar.core.atStartOfMonth
 import com.kizitonwose.calendar.core.daysOfWeek
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
-import kotlinx.collections.immutable.toImmutableList
-import kr.sjh.myschedule.data.local.entity.ScheduleWithTask
-import kr.sjh.myschedule.domain.model.Schedule
 import kr.sjh.myschedule.ui.component.ModalBottomSheetDialog
-import kr.sjh.myschedule.ui.screen.today.bottomsheet.BottomSheetContent
+import kr.sjh.myschedule.ui.screen.schedule.bottomsheet.BottomSheetContent
 import kr.sjh.myschedule.ui.theme.PaleRobinEggBlue
 import kr.sjh.myschedule.ui.theme.SoftBlue
 import kr.sjh.myschedule.ui.theme.VanillaIce
 import kr.sjh.myschedule.utill.Common.scheduleMaxCount
 import kr.sjh.myschedule.utill.addFocusCleaner
 import kr.sjh.myschedule.utill.rememberFirstVisibleMonthAfterScroll
-import okhttp3.internal.toImmutableMap
 import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 import kotlin.random.Random.*
+import kr.sjh.myschedule.domain.model.ScheduleWithTask
+import kr.sjh.myschedule.utill.common.SaveType
 
-
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun ScheduleScreen(
     viewModel: ScheduleViewModel = hiltViewModel(),
     onKeepOnScreenCondition: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    val coroutineScope = rememberCoroutineScope()
 
     val currentMonth = remember { YearMonth.now() }
 
@@ -113,72 +101,36 @@ fun ScheduleScreen(
 
     val visibleMonth = rememberFirstVisibleMonthAfterScroll(state)
 
-    val focusManager = LocalFocusManager.current
-
-    val sheetState = rememberModalBottomSheetState(initialValue = Hidden, confirmValueChange = {
-        when (it) {
-            Expanded -> {
-                true
-            }
-
-            Hidden -> {
-                viewModel.bottomSheetDialog = false
-                true
-            }
-
-            HalfExpanded -> {
-                false
-            }
-        }
-    }, skipHalfExpanded = true)
-
-    LaunchedEffect(key1 = viewModel.bottomSheetDialog, block = {
-        if (viewModel.bottomSheetDialog) {
-            sheetState.show()
-        } else {
-            sheetState.hide()
-        }
-    })
-
     //연도가 바뀔시 데이터 조회
     LaunchedEffect(key1 = visibleMonth.yearMonth.year, block = {
+        val startDate = LocalDate.of(visibleMonth.yearMonth.year.minus(1), 1, 1)
+        val endDate = LocalDate.of(visibleMonth.yearMonth.year.plus(1), 12, 31)
+        viewModel.getScheduleWithTasks(startDate, endDate)
     })
 
     ModalBottomSheetDialog(modifier = Modifier
         .fillMaxSize()
-        .imePadding()
-        .navigationBarsPadding()
-        .addFocusCleaner(focusManager), sheetState = sheetState, sheetContent = {
-        BottomSheetContent(title = uiState.bottomSheetUiState.title,
-            startDateTime = LocalDateTime.of(
-                uiState.bottomSheetUiState.startDate,
-                uiState.bottomSheetUiState.startTime
-            ),
-            endDateTime = LocalDateTime.of(
-                uiState.bottomSheetUiState.endDate,
-                uiState.bottomSheetUiState.endTime
-            ),
-            onTitleChange = viewModel::onTitleChange,
-            onSave = viewModel::onSave,
-            onDateRange = viewModel::onDateRange,
-            onAlarmTime = viewModel::onAlarmTime,
-            onAlarm = viewModel::onAlarm,
-            onCancel = { /*TODO*/ },
-            onDone = {})
-    }, content = {
-        ScheduleScreen(
-            modifier = Modifier.fillMaxSize(),
-            yearScheduleMap = uiState.yearScheduleMap,
-            calendarState = state,
-            visibleMonth = visibleMonth,
-            daysOfWeek = daysOfWeek,
-            selectedDate = uiState.selectedDate,
-            onKeepOnScreenCondition = onKeepOnScreenCondition,
-            onAddSchedule = viewModel::onAddSchedule,
-            onScheduleClick = viewModel::setSelectedSchedule,
-            onSelectedDate = viewModel::setSelectedDate
-        )
-    })
+        .navigationBarsPadding(),
+        sheetVisible = uiState.bottomSheetUiState.bottomSheetVisible,
+        onEvent = viewModel::onEvent,
+        sheetContent = {
+            BottomSheetContent(
+                uiState = uiState.bottomSheetUiState,
+                onEvent = viewModel::onEvent
+            )
+        },
+        content = {
+            ScheduleScreen(
+                modifier = Modifier.fillMaxSize(),
+                yearScheduleMap = uiState.yearScheduleMap,
+                calendarState = state,
+                visibleMonth = visibleMonth,
+                daysOfWeek = daysOfWeek,
+                selectedDate = uiState.selectedDate,
+                onKeepOnScreenCondition = onKeepOnScreenCondition,
+                onEvent = viewModel::onEvent
+            )
+        })
 
 
 }
@@ -192,9 +144,7 @@ private fun ScheduleScreen(
     daysOfWeek: List<DayOfWeek>,
     selectedDate: LocalDate,
     onKeepOnScreenCondition: () -> Unit,
-    onAddSchedule: () -> Unit,
-    onScheduleClick: (ScheduleWithTask) -> Unit,
-    onSelectedDate: (LocalDate) -> Unit
+    onEvent: (ScheduleEvent) -> Unit
 ) {
 
     LaunchedEffect(key1 = Unit, block = {
@@ -217,7 +167,7 @@ private fun ScheduleScreen(
                         list = yearScheduleMap[calendarDay.date].orEmpty(),
                         today = LocalDate.now()
                     ) { day ->
-                        onSelectedDate(day.date)
+                        onEvent(ScheduleEvent.SelectedDate(day.date))
                     }
                 },
                 monthHeader = {
@@ -246,18 +196,22 @@ private fun ScheduleScreen(
                     .padding(start = 10.dp, end = 10.dp)
                     .fillMaxWidth()
                     .fillMaxHeight(),
-                onClick = { onScheduleClick(it) },
+                onClick = { onEvent(ScheduleEvent.AddSchedule(it, SaveType.EDIT)) },
                 content = it.schedule.title,
                 backgroundColor = SoftBlue.copy(0.5f),
-                color = Color.Red.copy(0.5f)
+                color = Color(it.schedule.color)
             )
         }
         item {
-            ScheduleAddButton(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(70.dp), onAddSchedule = onAddSchedule
-            )
+            ScheduleAddButton(modifier = Modifier
+                .fillMaxWidth()
+                .height(70.dp), onClick = {
+                onEvent(
+                    ScheduleEvent.AddSchedule(
+                        ScheduleWithTask(), SaveType.NEW
+                    )
+                )
+            })
         }
     }
 }
@@ -359,7 +313,7 @@ fun Day(
                         .fillMaxWidth()
                         .wrapContentHeight()
                         .background(
-                            color = Color.Red
+                            color = Color(item.schedule.color)
                         ),
                 ) {
                     Text(
@@ -490,10 +444,8 @@ fun ScheduleItem(
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun ScheduleAddButton(modifier: Modifier, onAddSchedule: () -> Unit) {
-    Card(modifier = modifier, onClick = {
-        onAddSchedule()
-    }) {
+fun ScheduleAddButton(modifier: Modifier, onClick: () -> Unit) {
+    Card(modifier = modifier, onClick = onClick) {
         Row(
             modifier = Modifier.fillMaxSize(),
             horizontalArrangement = Arrangement.Center,

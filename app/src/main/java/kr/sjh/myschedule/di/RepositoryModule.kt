@@ -7,8 +7,7 @@ import dagger.hilt.components.SingletonComponent
 import kr.sjh.myschedule.data.local.dao.ScheduleDao
 import kr.sjh.myschedule.data.local.dao.ScheduleWithTaskDao
 import kr.sjh.myschedule.data.local.dao.TaskDao
-import kr.sjh.myschedule.data.local.entity.ScheduleWithTask
-import kr.sjh.myschedule.data.repository.ScheduleRepository
+import kr.sjh.myschedule.data.repository.ScheduleRepositoryImpl
 import javax.inject.Singleton
 
 @Module
@@ -19,8 +18,8 @@ object RepositoryModule {
     @Provides
     fun provideScheduleRepository(
         schedule: ScheduleDao, task: TaskDao, scheduleWithTask: ScheduleWithTaskDao
-    ): ScheduleRepository {
-        return ScheduleRepository(
+    ): ScheduleRepositoryImpl {
+        return ScheduleRepositoryImpl(
             schedule, task, scheduleWithTask
         )
     }
