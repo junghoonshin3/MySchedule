@@ -14,16 +14,21 @@ import androidx.compose.material.ModalBottomSheetDefaults
 import androidx.compose.material.ModalBottomSheetLayout
 import androidx.compose.material.ModalBottomSheetState
 import androidx.compose.material.ModalBottomSheetValue
+import androidx.compose.material.ModalBottomSheetValue.*
 import androidx.compose.material.Text
 import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kr.sjh.myschedule.ui.screen.schedule.ScheduleEvent
 import kr.sjh.myschedule.ui.theme.SoftBlue
+import kr.sjh.myschedule.utill.addFocusCleaner
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
@@ -31,7 +36,8 @@ fun ModalBottomSheetDialog(
     modifier: Modifier = Modifier,
     sheetContent: @Composable BoxScope.() -> Unit,
     content: @Composable () -> Unit,
-    sheetState: ModalBottomSheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden),
+    sheetVisible: Boolean,
+    onEvent: (ScheduleEvent) -> Unit,
     sheetShape: Shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp),
     sheetGesturesEnabled: Boolean = true,
     sheetElevation: Dp = 0.dp,
@@ -39,9 +45,29 @@ fun ModalBottomSheetDialog(
     sheetContentColor: Color = SoftBlue,
     scrimColor: Color = ModalBottomSheetDefaults.scrimColor,
 ) {
+    val sheetState = rememberModalBottomSheetState(initialValue = Hidden, confirmStateChange = {
+        when (it) {
+            Hidden -> {
+                onEvent(ScheduleEvent.HideBottomSheet)
+            }
+            else -> {}
+        }
+        true
+    })
+
+    val focusManager = LocalFocusManager.current
+
+    LaunchedEffect(key1 = sheetVisible, block = {
+        if (sheetVisible) {
+            sheetState.show()
+        } else {
+            sheetState.hide()
+            focusManager.clearFocus()
+        }
+    })
     BoxWithConstraints {
         ModalBottomSheetLayout(
-            modifier = modifier,
+            modifier = modifier.addFocusCleaner(focusManager),
             scrimColor = scrimColor,
             sheetContentColor = sheetContentColor,
             sheetBackgroundColor = sheetBackgroundColor,

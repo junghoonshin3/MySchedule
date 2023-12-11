@@ -16,7 +16,7 @@ import java.time.LocalDate
 @Dao
 interface ScheduleWithTaskDao : ScheduleDao, TaskDao {
     @MapInfo(keyColumn = "regDt")
-    @Query("SELECT * FROM schedules INNER JOIN tasks ON schedules.id = tasks.scheduleId WHERE regDt BETWEEN :startDate AND :endDate")
+    @Query("SELECT * FROM schedules INNER JOIN tasks ON schedules.id = tasks.scheduleId WHERE regDt BETWEEN :startDate AND :endDate ORDER BY startDate, startTime ASC ")
     fun getScheduleWithTasks(
         startDate: LocalDate,
         endDate: LocalDate

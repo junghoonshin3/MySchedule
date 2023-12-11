@@ -1,4 +1,4 @@
-package kr.sjh.myschedule.ui.screen.today.bottomsheet.add
+package kr.sjh.myschedule.ui.screen.schedule.bottomsheet.add
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.BorderStroke
@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -41,6 +42,7 @@ import com.commandiron.wheel_picker_compose.WheelDateTimePicker
 import com.commandiron.wheel_picker_compose.WheelTimePicker
 import com.commandiron.wheel_picker_compose.core.TimeFormat
 import com.commandiron.wheel_picker_compose.core.WheelPickerDefaults
+import kr.sjh.myschedule.ui.screen.schedule.ScheduleEvent
 import kr.sjh.myschedule.ui.theme.PaleRobinEggBlue
 import kr.sjh.myschedule.ui.theme.VanillaIce
 import java.time.LocalDateTime
@@ -52,18 +54,12 @@ import java.util.Locale
 @Composable
 fun ScheduleAddContent(
     modifier: Modifier,
+    bottomSheetVisible: Boolean,
+    onEvent: (ScheduleEvent) -> Unit,
     startDate: LocalDateTime,
     endDate: LocalDateTime,
-    onSave: () -> Unit,
-    onDateRange: (LocalDateTime, LocalDateTime) -> Unit,
-    onAlarm: (Boolean) -> Unit,
-    onAlarmTime: (LocalTime) -> Unit,
-    onCancel: () -> Unit
+    buttonText: String,
 ) {
-
-    var isAlarm by remember {
-        mutableStateOf(false)
-    }
 
     LazyColumn(
         modifier,
@@ -71,26 +67,12 @@ fun ScheduleAddContent(
     ) {
 
         item {
-            DateTimeContent(startDate, endDate, onDateRange)
+            DateTimeContent(bottomSheetVisible, startDate, endDate, onEvent)
         }
-
-//        item {
-//            AlarmContent(modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(end = 10.dp, start = 10.dp),
-//                isAlarmShow = isAlarm,
-//                onCheckedChange = {
-//                    isAlarm = it
-//                    onAlarm(it)
-//                },
-//                onAlarmTime = {
-//                    onAlarmTime(it)
-//                })
-//        }
 
         item {
             ScheduleAddButton(
-                onSave = onSave, onCancel = onCancel
+                buttonText = buttonText, onEvent = onEvent
             )
         }
     }
@@ -99,9 +81,10 @@ fun ScheduleAddContent(
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun DateTimeContent(
+    bottomSheetVisible: Boolean,
     startDate: LocalDateTime,
     endDate: LocalDateTime,
-    onDateRange: (LocalDateTime, LocalDateTime) -> Unit,
+    onEvent: (ScheduleEvent) -> Unit
 ) {
     var isLeftSpinnerShow by remember {
         mutableStateOf(false)
@@ -126,7 +109,14 @@ fun DateTimeContent(
     val timeFormat = DateTimeFormatter.ofPattern("HH:mm a")
 
     LaunchedEffect(key1 = leftDateTime, key2 = rightDateTime, block = {
-        onDateRange(leftDateTime,rightDateTime)
+        onEvent(ScheduleEvent.SetStartEndDateTime(leftDateTime, rightDateTime))
+    })
+
+    LaunchedEffect(key1 = bottomSheetVisible, block = {
+        if (!bottomSheetVisible) {
+            isLeftSpinnerShow = false
+            isRightSpinnerShow = false
+        }
     })
 
     Column {
@@ -223,79 +213,80 @@ fun DateTimeContent(
     }
 }
 
-@Composable
-fun AlarmContent(
-    modifier: Modifier,
-    isAlarmShow: Boolean = false,
-    onCheckedChange: (Boolean) -> Unit,
-    onAlarmTime: (LocalTime) -> Unit
-) {
-    Column {
-        Row(
-            modifier = modifier,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Image(
-                modifier = Modifier
-                    .width(25.dp)
-                    .height(25.dp)
-                    .padding(end = 5.dp),
-                imageVector = Icons.Default.Alarm,
-                contentDescription = ""
-            )
-            Switch(checked = isAlarmShow, onCheckedChange = {
-                onCheckedChange(it)
-            })
-        }
-        AnimatedContent(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.fillMaxWidth(),
-            targetState = isAlarmShow,
-            label = ""
-        ) {
-            if (it) {
-                WheelTimePicker(
-                    timeFormat = TimeFormat.AM_PM,
-                    rowCount = 5,
-                    size = DpSize(200.dp, 150.dp),
-                    textStyle = TextStyle(fontSize = 15.sp),
-                    textColor = Color.Black,
-                    selectorProperties = WheelPickerDefaults.selectorProperties(
-                        enabled = true,
-                        shape = RoundedCornerShape(5.dp),
-                        color = Color(0xffF7F2FA).copy(alpha = 0.2f),
-                        border = BorderStroke(1.dp, Color.White)
-                    )
-                ) {
-                    onAlarmTime(it)
-                }
-            }
-        }
-
-    }
-
-}
+//@Composable
+//fun AlarmContent(
+//    modifier: Modifier,
+//    isAlarmShow: Boolean = false,
+//    onCheckedChange: (Boolean) -> Unit,
+//    onAlarmTime: (LocalTime) -> Unit
+//) {
+//    Column {
+//        Row(
+//            modifier = modifier,
+//            verticalAlignment = Alignment.CenterVertically,
+//        ) {
+//            Image(
+//                modifier = Modifier
+//                    .width(25.dp)
+//                    .height(25.dp)
+//                    .padding(end = 5.dp),
+//                imageVector = Icons.Default.Alarm,
+//                contentDescription = ""
+//            )
+//            Switch(checked = isAlarmShow, onCheckedChange = {
+//                onCheckedChange(it)
+//            })
+//        }
+//        AnimatedContent(
+//            contentAlignment = Alignment.Center,
+//            modifier = Modifier.fillMaxWidth(),
+//            targetState = isAlarmShow,
+//            label = ""
+//        ) {
+//            if (it) {
+//                WheelTimePicker(
+//                    timeFormat = TimeFormat.AM_PM,
+//                    rowCount = 5,
+//                    size = DpSize(200.dp, 150.dp),
+//                    textStyle = TextStyle(fontSize = 15.sp),
+//                    textColor = Color.Black,
+//                    selectorProperties = WheelPickerDefaults.selectorProperties(
+//                        enabled = true,
+//                        shape = RoundedCornerShape(5.dp),
+//                        color = Color(0xffF7F2FA).copy(alpha = 0.2f),
+//                        border = BorderStroke(1.dp, Color.White)
+//                    )
+//                ) {
+//                    onAlarmTime(it)
+//                }
+//            }
+//        }
+//
+//    }
+//
+//}
 
 @Composable
 fun ScheduleAddButton(
-    onSave: () -> Unit, onCancel: () -> Unit
+    buttonText: String, onEvent: (ScheduleEvent) -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)
     ) {
-        Button(
-            modifier = Modifier.background(Color.Transparent),
+        Button(modifier = Modifier
+            .background(Color.Transparent)
+            .imePadding(),
             elevation = ButtonDefaults.elevation(defaultElevation = 0.dp),
             colors = ButtonDefaults.buttonColors(
                 backgroundColor = PaleRobinEggBlue, contentColor = Color.White
             ),
-            onClick = onSave
-        ) {
-            Text(text = "저장")
+            onClick = { onEvent(ScheduleEvent.Save) }) {
+            Text(text = buttonText)
         }
         Button(
-            onClick = { onCancel() },
+            modifier = Modifier.imePadding(),
+            onClick = { onEvent(ScheduleEvent.HideBottomSheet) },
             elevation = ButtonDefaults.elevation(defaultElevation = 0.dp),
             colors = ButtonDefaults.buttonColors(
                 backgroundColor = VanillaIce, contentColor = Color.White

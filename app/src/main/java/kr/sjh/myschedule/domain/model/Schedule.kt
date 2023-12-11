@@ -1,9 +1,8 @@
 package kr.sjh.myschedule.domain.model
 
 import androidx.compose.ui.graphics.toArgb
-import kr.sjh.myschedule.ui.screen.today.generateRandomColor
+import kr.sjh.myschedule.ui.screen.schedule.generateRandomColor
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.LocalTime
 
 data class Schedule(

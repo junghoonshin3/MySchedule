@@ -4,8 +4,8 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ModalBottomSheetValue.*
 import androidx.compose.material.Scaffold
 import androidx.compose.runtime.*
@@ -16,7 +16,7 @@ import androidx.navigation.compose.composable
 import kr.sjh.myschedule.data.local.entity.ScheduleEntity
 import kr.sjh.myschedule.receiver.MyAlarmScheduler
 import kr.sjh.myschedule.ui.screen.navigation.BottomNavigationBar
-import kr.sjh.myschedule.ui.screen.today.ScheduleScreen
+import kr.sjh.myschedule.ui.screen.schedule.ScheduleScreen
 import kr.sjh.myschedule.utill.MyScheduleAppState
 import kr.sjh.myschedule.utill.rememberMyScheduleAppState
 
@@ -32,7 +32,9 @@ fun MyScheduleApp(
         ),
             modifier = Modifier
                 .height(70.dp)
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .imePadding()
+            ,
             navController = appState.navController,
             onItemClick = {
                 appState.navController.navigate(it.route)
