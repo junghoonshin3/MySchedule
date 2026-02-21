@@ -11,14 +11,6 @@
 3. 등록된 스케쥴을 오른쪽 스와프 시 삭제 및 알람 등록이 삭제됩니다.
 4. 주 <->월 달력 변경기능 추가
 
-## screenshot
-<img src="readmeImage/Screenshot_20230827_185641.png" width="180px" height="320px" title="splash" alt="splash"></img>
-<img src="readmeImage/Screenshot_20230827_185341.png" width="180px" height="320px" title="main" alt="main"></img>
-<img src="readmeImage/Screenshot_20230827_185248.png" width="180px" height="320px" title="detail" alt="detail"></img>
-<img src="readmeImage/Screenshot_20230827_185518.png" width="180px" height="320px" title="noti" alt="noti"></img>
-<img src="readmeImage/Screenshot_20230827_185706.png" width="180px" height="320px" title="noti2" alt="noti2"></img>
-<img src="readmeImage/app_test.gif" width="180px" height="320px" title="test" alt="test"></img>
-
 ## Development Environment
 
 - Android Studio Electric Eel
